@@ -1,18 +1,16 @@
 `ifndef PROJECT_REGISTER_V
 `define PROJECT_REGISTER_V
 
-//Registered Incrementer in Verilog
+module RegisterV
+	#(parameter N = 32)
+	(clk, reset, w, d, q);
 
-
-module RegisterV(clk, reset, w, d, q);
-
-	parameter n = 32;
 	input logic clk;
 	input logic reset;
 	input  logic w;
-	input logic [n-1:0] d;
-	output logic [n-1:0] q;
-	logic [n-1:0] regout;
+	input logic [N-1:0] d;
+	output logic [N-1:0] q;
+	logic [N-1:0] regout;
 
 	assign q = regout;
 
