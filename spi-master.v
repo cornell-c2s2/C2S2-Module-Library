@@ -130,7 +130,7 @@ always @(*) begin
         STATE_START0:      cs( 0,                    0,                0,     0,     0,       0,                  0,    0,   0,   1    )
         STATE_START1:      cs( 0,                    0,                0,     0,     0,       1,                  0,    0,   0,   0    )
         STATE_SCLK_HIGH:   cs( 0,                    0,                0,     0,     1,       0,                  1,    0,   1,   0    )
-        STATE_SCLK_LOW:    cs( 0,                    0,                0,     0,     0,       clck_cnt_not_done,  0,    0,   0,   0    )
+        STATE_SCLK_LOW:    cs( 0,                    0,                0,     0,     0,       clk_cnt_not_done,   0,    0,   0,   0    )
         STATE_CS_LOW_WAIT: cs( 0,                    0,                0,     0,     0,       0,                  0,    0,   0,   0    )
         STATE_DONE:        cs( 0,                    0,                1,     1,     0,       0,                  0,    1,   0,   0    )
     endcase
