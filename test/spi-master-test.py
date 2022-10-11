@@ -22,20 +22,6 @@ def test( model, cs_addr, packet_size, recv, send, cs, sclk, mosi, miso ):
     model.recv_msg            @= recv[2]
     model.send_rdy            @= send[1]
     model.miso                @= miso
-    
-
-    """
-    need to assert
-
-    
-    mosi
-    sclk
-    cs
-    send_val
-    recv_rdy
-    send_msg
-
-    """
 
     assert model.cs_addr_ifc_rdy == cs_addr[1]
     assert model.packet_size_rdy == packet_size[1]
@@ -79,8 +65,27 @@ def basic_test(cmd_line_opts):
     
 
     #run items here
-    #  cs        packet
-    #  addr      size      recv      send       cs   sclk   mosi   miso
-    t( [0,0,0],  [0,0,0],  [0,0,0]   [0,0,0],   0,   0,     0,     0 ); #setting up formatting
+    #             cs        packet
+    #  model      addr      size      recv      send       cs   sclk   mosi   miso
+    #INIT
+    test( model      [1,1,0],  [0,1,0],  [0,0,0]   [0,0,0],   1,   0,     '?',     0 ); #setting up for 
+    test( model      [0,0,0],  [0,1,0],  [0,0,0]   [0,0,0],   1,   0,     '?',     0 ); #setting up formatting
+    test( model      [0,0,0],  [0,1,0],  [0,0,0]   [0,0,0],   1,   0,     '?',     0 ); #setting up formatting
+    #START0
+    test( model      [0,0,0],  [0,0,0],  [0,0,0]   [0,0,0],   0,   0,     0,     0 ); #setting up formatting
+    #START1
+    test( model      [0,0,0],  [0,0,0],  [0,0,0]   [0,0,0],   0,   0,     0,     0 ); #setting up formatting
+    #HIGH LOW
+    test( model      [0,0,0],  [0,0,0],  [0,0,0]   [0,0,0],   0,   0,     0,     0 ); #setting up formatting
+    test( model      [0,0,0],  [0,0,0],  [0,0,0]   [0,0,0],   0,   0,     0,     0 ); #setting up formatting
+    #HIGH LOW
+    test( model      [0,0,0],  [0,0,0],  [0,0,0]   [0,0,0],   0,   0,     0,     0 ); #setting up formatting
+    test( model      [0,0,0],  [0,0,0],  [0,0,0]   [0,0,0],   0,   0,     0,     0 ); #setting up formatting
+    #HIGH LOW
+    test( model      [0,0,0],  [0,0,0],  [0,0,0]   [0,0,0],   0,   0,     0,     0 ); #setting up formatting
+    test( model      [0,0,0],  [0,0,0],  [0,0,0]   [0,0,0],   0,   0,     0,     0 ); #setting up formatting
+    #CS LOW WAIT
+    test( model      [0,0,0],  [0,0,0],  [0,0,0]   [0,0,0],   0,   0,     0,     0 ); #setting up formatting
+    #DONE
 
-    
+
