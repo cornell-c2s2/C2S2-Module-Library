@@ -5,9 +5,11 @@ module spi_fsm (
 
     //reg signals
     input  logic packet_size_reg;
+    input  logic packet_size_ifc_val;
     output logic packet_size_reg_en;
 
     input  logic cs_addr_reg;
+    input  logic cs_addr_ifc_val;
     output logic cs_reg_en;
 
     //send recv signals
@@ -64,7 +66,7 @@ task cs
     input cs_sclk_negedge,
     input cs_sclk_posedge,
     input cs_sclk,
-    input cs_cs
+    input cs_cs,
 );
 
 begin
@@ -76,28 +78,30 @@ begin
     sclk_posedge = cs_sclk_posedge;
     sclk = cs_sclk;
     cs = cs_cs;
+
 end
 endtask
 
-logic clck_cnt_done;
+logic clk_cnt_not_done;
 
-assign clck_cnt_not_done = (clk_count != 0);
+assign clk_cnt_not_done = (clk_count != 0);
+assign packet_size
 
 always @(*) begin
     case(state_reg)
 
-//                             packet size  addr      send   recv   sclk     sclk    
-//                             reg en       reg en    val    rdy    negedge  posedge                   sclk  cs
+//                             packet size           addr              send   recv   sclk     sclk    
+//                             reg en                reg en            val    rdy    negedge  posedge             sclk  cs
 // need to add more signals
-        STATE_INIT:        cs( ?,           ?,        0,     1,     0,       0,                        0,    1)
-        STATE_START0:      cs( ?,           ?,        0,     0,     0,       0,                        0,    0)
-        STATE_START1:      cs( ?,           ?,        0,     0,     0,       1,                        0,    0)
-        STATE_SCLK_HIGH:   cs( ?,           ?,        0,     0,     1,       0,                        1,    0)
-        STATE_SCLK_LOW:    cs( ?,           ?,        0,     0,     0,       clck_cnt_not_done,        0,    0)
-        STATE_CS_LOW_WAIT: cs( ?,           ?,        0,     0,     0,       0,                        0,    0)
-        STATE_DONE:        cs( ?,           ?,        1,     1,     0,       0,                        0,    1)
+        STATE_INIT:        cs( packet_size_ifc_val,  cs_addr_ifc_val,  0,     1,     0,       0,                  0,    1)
+        STATE_START0:      cs( 0,                    0,                0,     0,     0,       0,                  0,    0)
+        STATE_START1:      cs( 0,                    0,                0,     0,     0,       1,                  0,    0)
+        STATE_SCLK_HIGH:   cs( 0,                    0,                0,     0,     1,       0,                  1,    0)
+        STATE_SCLK_LOW:    cs( 0,                    0,                0,     0,     0,       clck_cnt_not_done,  0,    0)
+        STATE_CS_LOW_WAIT: cs( 0,                    0,                0,     0,     0,       0,                  0,    0)
+        STATE_DONE:        cs( 0,                    0,                1,     1,     0,       0,                  0,    1)
     endcase
 end
 
 endmodule
-`endif spi_master
+`endif 
