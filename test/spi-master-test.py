@@ -79,6 +79,8 @@ def basic_test(cmd_line_opts):
     
 
     #run items here
-    #  cs    packet
-    #  addr  size    recv send cs  sclk mosi, miso
-    t( 0,    0,      0,   0,   0,  0,   0,    0   ); #setting up formatting
+    #  cs        packet
+    #  addr      size      recv      send       cs   sclk   mosi   miso
+    t( [0,0,0],  [0,0,0],  [0,0,0]   [0,0,0],   0,   0,     0,     0 ); #setting up formatting
+
+    
