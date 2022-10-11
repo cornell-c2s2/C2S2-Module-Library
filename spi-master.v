@@ -3,8 +3,7 @@
 
 module spi_fsm 
 (
-    //
-    input  logic        clk;
+    //counter signals
     input  logic [31:0] count;
     output logic        count_increment;
     output logic        count_reset;
@@ -82,10 +81,6 @@ always @(*) begin
         //need to double check state_done
     endcase 
 
-end
-
-always @(posedge clk) begin
-    if(current_state == )
 end
 
 task cs
