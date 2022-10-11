@@ -71,13 +71,13 @@ task cs
 
 begin
     packet_size_reg_en = cs_packet_size_reg_en;
-    cs_addr_reg_en = cs_cs_addr_reg_en;
-    send_val = cs_send_val;
-    recv_rdy = cs_recv_rdy;
-    sclk_negedge = cs_sclk_negedge;
-    sclk_posedge = cs_sclk_posedge;
-    sclk = cs_sclk;
-    cs = cs_cs;
+    cs_addr_reg_en     = cs_cs_addr_reg_en;
+    send_val           = cs_send_val;
+    recv_rdy           = cs_recv_rdy;
+    sclk_negedge       = cs_sclk_negedge;
+    sclk_posedge       = cs_sclk_posedge;
+    sclk               = cs_sclk;
+    cs                 = cs_cs;
 
 end
 endtask
