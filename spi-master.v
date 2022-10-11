@@ -45,27 +45,7 @@ typedef enum logic [2:0]
 
 state_t current_state;
 state_t next_state;
-// need register for counter
 
-
-
-//placeholder for C2S2 counter
-
-logic        counter_reset;
-logic        counter_increment;
-logic [31:0] counter_count;
-
-vc_BasicCounter#(32,0,4294967296) counter
-(
-    .clk           (clk),
-    .reset         (counter_reset),
-    .clear         (1'b0),
-    .increment     (counter_increment),
-    .decrement     (1'b0),
-    .count         (counter_count),
-    .count_is_zero (),
-    .count_is_max  ()
-);
 
 
 always @(*) begin
@@ -112,7 +92,7 @@ end
 endtask
 
 logic clk_cnt_not_done;
-assign clk_cnt_not_done = (counter_count != packet_size_ifc_val);
+assign clk_cnt_not_done = (count != packet_size_ifc_val);
 
 
 always @(*) begin
