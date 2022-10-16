@@ -9,7 +9,7 @@ git switch main
 rm lib/* -r
 
 # reads all branches on this machine into a list 
-x=$(git branch -a --format="%(refname:short)" | egrep -v '^(origin/)?(main|HEAD)$') 
+x=$(git branch -r --format="%(refname:short)" | egrep -v '^(origin/)?(main|HEAD)$') 
 readarray -t x <<< "$x"
 
 # loop through all the branches (including remote branches)
