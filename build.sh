@@ -18,13 +18,16 @@ do
 
 	echo -e "Reading files:
 \033[0;32m$f\033[0m
-from branch \033[0;31m$v\033[0m"
+from branch \033[0;31m$v\033[0m
+"
 
 	readarray -t f <<< "$f"
 
-	for folder in ${f[*]}
+	# Loop through every file in the file list
+	for file in ${f[*]}
 	do
-		npath="lib/sim/lib/$(egrep -o "[^/]+\.v" <<< $folder)"
-		git show $v:$folder > $npath
+		# Calculate new path in the library directory
+		npath="lib/sim/lib/$(egrep -o "[^/]+\.v" <<< $file)"
+		git show $v:$file > $npath
 	done
 done
