@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# Iterates through all branches to pull verilog files into lib/
+# Iterates through all branches to pull verilog files into lib/sim/
 
 # make sure we are on the main branch
 git switch main
 
 # clean library
 rm lib/* -r
+mkdir lib/sim
 
 # reads all branches on this machine into a list 
 x=$(git branch -r --format="%(refname:short)" | egrep -v '^(origin/)?(main|HEAD)$') 
@@ -27,11 +28,11 @@ from branch \033[0;31m$v\033[0m
 
 	# Loop through every file in the file list
 	vstripped=$(egrep -o '[^/]+$' <<< $v)
-	mkdir lib/$vstripped
+	mkdir lib/sim/$vstripped
 	for file in ${f[*]}
 	do
 		# Calculate new path in the library directory
-		npath="lib/$vstripped/$(egrep -o "[^/]+\.v" <<< $file)"
+		npath="lib/sim/$vstripped/$(egrep -o "[^/]+\.v" <<< $file)"
 		git show $v:$file > $npath
 	done
 done
