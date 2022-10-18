@@ -1,6 +1,5 @@
 `ifndef FIXED_POINT_ITERATIVE_MULTIPLIER
 `define FIXED_POINT_ITERATIVE_MULTIPLIER
-`include "../../../lib/sim/nbitregister/RegisterV_Reset.v"
 
 interface stateI #( parameter n, parameter d ) ();
 	logic [n+d-1:0] acc; // this needs to be n+d bits because the decimal portion of the multiplication may overflow
@@ -10,27 +9,6 @@ interface stateI #( parameter n, parameter d ) ();
 	modport out ( output acc, output counter );
 	modport io ( inout acc, inout counter );
 endinterface
-
-module state #( parameter n, parameter d ) (clk, reset, w, dat, q);
-	input clk, reset, w;
-	stateI.in dat;
-	stateI.out q;
-	
-	RegisterV_Reset #(.N(n+d)) acc (
-		.clk(clk),
-		.reset(reset),
-		.w(w),
-		.d(dat.acc),
-		.q(q.acc)
-	);
-	RegisterV_Reset #(.N($clog2(n+1))) counter (
-		.clk(clk),
-		.reset(reset),
-		.w(w),
-		.d(dat.counter),
-		.q(q.counter)
-	);
-endmodule
 
 module fpmulit_inner # (
 	parameter n,
