@@ -44,26 +44,18 @@ module fpmulit_inner # (
 	stateI.out out;
 
 	reg [n+d-1:0] tmp;
+	reg [2*n-1:0] tt;
 	always @(*) begin
-		// $display("%b, %b\n", a, b);
-		if (in.counter < d) begin // we are multiplying to the right of the decimal point
-			tmp = in.acc;
-			if (b[in.counter]) begin
-				// $display("detected decimal bit\n");
-				tmp = tmp + a;
+		tmp = 0;
+		if (b[in.counter]) begin
+			tmp = a << in.counter;
+			if (sign & in.counter == n-1) begin// sign bit (if multiplier is signed)
+				tt = { {(n-d){a[n+d-1]}}, a};
+				tt = ((tt << n) - tt) << (n-1);
+				tmp = tt[n+d-1:0];
 			end
-			tmp = tmp >>> 1;
-		end else begin
-			tmp = 0;
-			if (b[in.counter]) begin
-				// $display("detected bit\n");
-				tmp = a << (in.counter - d);
-			end
-			if (sign & in.counter == n-1)// sign bit (if multiplier is signed)
-				tmp = -tmp;
-			tmp = tmp + in.acc;			
 		end
-		// $display("counter: %d/%d, tmp: %b\n", in.counter, n, tmp);
+		tmp = tmp + in.acc;			
 		rdy = in.counter == n-1;
 		out.acc = tmp;
 		out.counter = in.counter + 1;
@@ -77,6 +69,8 @@ module fpmulit
 	parameter sign = 1 // 1 if signed, 0 otherwise.
 ) (clk, snd_val, snd_rdy, rcv_val, rcv_rdy, a, b, c);
 	// performs the operation c = a*b
+	// Equivalent to taking the integer representations of both numbers,
+	// multiplying, and then shifting right
 	input logic clk;
 	input logic snd_val, rcv_rdy;
 	input logic [n-1:0] a, b;
@@ -120,7 +114,7 @@ module fpmulit
 
 		if (rdy & ~snd_rdy & ~rcv_val) begin
 			rcv_val <= 1;
-			c <= ctI.acc[n-1:0];
+			c <= ctI.acc[n+d-1:d];
 		end
 	end
 endmodule

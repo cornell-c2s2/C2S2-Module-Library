@@ -11,6 +11,7 @@ def rand_fxp(s, n, d):
 	x = Fxp(0, s, n, d, overflow='wrap')
 	x.set_val(randint(0, 2**n-1), raw=True)
 	x.config.op_sizing = 'same'
+	x.rounding = 'floor'
 	return x
 
 # Initialize a simulatable model
@@ -51,6 +52,7 @@ def test_with_dump():
 
 	a = Fxp(3.7, s, n, d, overflow='wrap')
 	a.config.op_sizing = 'same'
+	a.rounding = 'floor'
 	b = Fxp(4.2, s, n, d, overflow='wrap')
 	c = a * b; # approximately 15.54
 
@@ -67,11 +69,17 @@ def test_edge():
 		(2, 0, 0, 2, 2), # unsigned overflow check
 		(1, 1, 0, 1, 1), # 1 bit numbers (0.5 * 0.5 = 0)
 		(3, 3, 0, 0.5, 0.5), # unsigned number with no non-decimal bits
+		(2, 1, 0, 0.5, 1.5),
+		(2, 1, 1, 0.5, -0.5),
+		(6, 3, 1, -4, -0.125), #100.000 * 111.111 = 000.100
+		(6, 3, 1, 3.875, -0.125), #-0.375
+
 	]
 
 	for (n, d, s, a, b) in cases:
 		a = Fxp(a, s, n, d, overflow='wrap')
 		a.config.op_sizing = 'same'
+		a.rounding = 'floor'
 		b = Fxp(b, s, n, d, overflow='wrap')
 
 		model = create_model(n, d, s, dump_vcd='edge')
@@ -80,7 +88,7 @@ def test_edge():
 		out.set_val(int(eval_until_ready(model, a, b)), raw=True)
 
 		c = a * b
-		print("%s * %s = %s, got %s" % (a.bin(), b.bin(), c.bin(), out.bin()))
+		print("%s * %s = %s, got %s" % (a.bin(frac_dot=True), b.bin(frac_dot=True), c.bin(frac_dot=True), out.bin(frac_dot=True)))
 		assert c.bin() == out.bin()
 
 def test_random_individual():
