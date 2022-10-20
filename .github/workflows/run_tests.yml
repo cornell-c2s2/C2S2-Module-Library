@@ -7,9 +7,9 @@ name: Run Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ fixedpt-iterative-multiplier ]
   pull_request:
-    branches: [ main ]
+    branches: [ fixedpt-iterative-multiplier ]
 
 jobs:
   pytest:
