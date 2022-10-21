@@ -44,6 +44,7 @@ jobs:
         pip install --upgrade pip
         pip install pymtl3
         pip install numpy
+        pip install fxpmath
     - name: Run tests
       timeout-minutes: 5
       run: |
