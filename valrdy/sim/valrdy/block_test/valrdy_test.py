@@ -3,7 +3,7 @@ from pymtl3 import *
 from pymtl3.stdlib.test_utils import run_test_vector_sim
 
 from valrdy.valrdyRTL import valrdyVRTL
-
+from valrdy.shiftregSISORTL import shiftregSISOVRTL
 def test_sending(cmdline_opts):
     run_test_vector_sim(valrdyVRTL(),[
         ('snd_val snd_msg rcv_rdy snd_rdy rcv_msg* rcv_val'),
@@ -19,3 +19,13 @@ def test_holding(cmdline_opts):
         [ 0x01,   0xBB,   0x00,   0x00,   0xFF,    0x01],
         [ 0x00,   0xCC,   0x01,   0x01,   0xFF,    0x00],
         [ 0x00,   0xDD,   0x01,   0x01,   0xFF,    0x00]],cmdline_opts)
+
+def test_SISO(cmdline_opts):
+    run_test_vector_sim(shiftregSISOVRTL(),[
+    ('LOAD_EN SHIFT_EN   IN     LOAD_DATA  OUT*'),
+    [ 0x1,    0x0,       0x0,   0x5,       '?' ],
+    [ 0x0,    0x1,       0x1,   0x5,       0x0],
+    [ 0x0,    0x1,       0x0,   0x5,       0x1],
+    [ 0x1,    0x1,       0x0,   0x6,       0x0],
+    [ 0x0,    0x0,       0x0,   0x6,       0x0]],
+    cmdline_opts)
