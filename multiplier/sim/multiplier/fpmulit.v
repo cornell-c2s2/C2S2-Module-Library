@@ -57,7 +57,8 @@ module fpmulit
 	reg [n-1:0] hb, hc;
 	reg [n+d-1:0] ha;
 	reg rdy;
-	stateI #(.n(n), .d(d)) cinI, ctI;
+	stateI #(.n(n), .d(d)) cinI ();
+	stateI #(.n(n), .d(d)) ctI ();
 	
 	initial begin
 		snd_rdy = 1;
@@ -78,6 +79,7 @@ module fpmulit
 			snd_rdy <= 0;
 			cinI.acc <= 0;
 			cinI.counter <= 0;
+			rcv_val <= 0;
 		end
 
 		if (~snd_rdy) begin
@@ -87,7 +89,6 @@ module fpmulit
 
 		if (rcv_rdy & rcv_val) begin // reciever is ready for input
 			snd_rdy <= 1;
-			rcv_val <= 0;
 		end
 
 		if (rdy & ~snd_rdy & ~rcv_val) begin
