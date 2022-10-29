@@ -1,15 +1,12 @@
-`ifndef spi_master
-`define spi_master
-`endif
-
-module shiftreg #(parameter bitwidth = 32) (clk, reset, in, load_data, load_en, shift_en, out);
-    input logic [bitwidth-1:0] load_data;
-    input logic reset;
-    input logic load_en;
-    input logic shift_en;
-    input logic in;
-    input logic [bitwidth-1:0] load_data;
-    output logic out;
+module shiftreg #(parameter bitwidth = 32) 
+(
+    input logic reset,
+    input logic load_en,
+    input logic shift_en,
+    input logic in,
+    input logic [bitwidth-1:0] load_data,
+    output logic out
+);
 
     logic [bitwidth-1:0] regval;
  

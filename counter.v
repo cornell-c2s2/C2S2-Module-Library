@@ -1,7 +1,11 @@
-module counter #(parameter bitwidth = 32) (en, rst, out);
-    input logic in;
-    input logic CLK, LD, EN;
-    output logic [bitwidth] out;
+module counter #(parameter bitwidth = 32) 
+(
+    input logic in,
+    input logic clk, 
+    input logic rst, 
+    input logic en,
+    output logic [bitwidth] out
+);
 
     logic [5:0] count;
     always @(posedge en) begin

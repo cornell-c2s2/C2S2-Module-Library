@@ -1,6 +1,9 @@
 `ifndef spi_master
 `define spi_master
 
+`include "shiftreg.v"
+`include "counter.v"
+
 module spi_master_ctrl
 (
     //counter signals
@@ -129,26 +132,26 @@ end
 //Datapath
 module spi_master_dpath
 (
-    input logic cs_addr_val;
-    output logic cs_addr_rdy;
-    input logic [31:0] cs_addr_msg;
+    input logic cs_addr_val,
+    output logic cs_addr_rdy,
+    input logic [31:0] cs_addr_msg,
 
-    input logic packet_size_val;
-    output logic packet_size_rdy;
-    input logic [31:0] packet_size_msg;
+    input logic packet_size_val,
+    output logic packet_size_rdy,
+    input logic [31:0] packet_size_msg,
 
-    input logic recv_val;
-    output logic recv_rdy;
-    input logic [31:0] recv_msg;
+    input logic recv_val,
+    output logic recv_rdy,
+    input logic [31:0] recv_msg,
 
-    output logic send_val;
-    input logic send_rdy;
-    output logic [31:0] send_msg;
+    output logic send_val,
+    input logic send_rdy,
+    output logic [31:0] send_msg,
 
-    output cs;
-    output sclk;
-    output mosi;
-    input miso;
+    output logic cs,
+    output logic sclk,
+    output logic mosi,
+    input logic miso
 );
 
 
@@ -157,35 +160,42 @@ module spi_master_dpath
 // shift register out
 logic outbound_mosi;
 
-shiftreg#() (
+shiftreg #(32) first 
+(
     .shift_en = (sclk_posedge),
     .in = (1'b0),
     .load_data = (recv_msg << (nbits - packet_size)), //adjust here
     .load_en = (recv_rdy && recv_val), //adjsut here
-    .out = (outbound_mosi)
+    .out = (outbound_mosi),
+    .reset = ()
 
-)
+);
 
 // shift register out
 
 logic outbound_send_msg;
 
-shiftreg#() (
+shiftreg #(32) second 
+(
     .shift_en = (sclk_negedge),
     .in = (miso),
     .load_data = (1'b0), //adjust here
     .load_en = (1'b0), //adjsut here
-    .out = (outbound_send_msg)
+    .out = (outbound_send_msg),
+    .reset = ()
 
-)
+);
 
 // counter
-counter#() (
+counter #(32) counting
+(
     .en = (count_increment),
+    .clk = (),
     .rst = (count_reset),
-    .out = (count)
+    .out = (count),
+    .in = ()
     
-)
+);
 
 
 // register 
