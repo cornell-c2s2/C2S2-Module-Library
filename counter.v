@@ -4,7 +4,7 @@ module counter #(parameter bitwidth = 32)
     input logic clk, 
     input logic rst, 
     input logic en,
-    output logic [bitwidth] out
+    output logic [bitwidth:0] out
 );
 
     logic [5:0] count;

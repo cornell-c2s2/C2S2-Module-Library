@@ -128,6 +128,7 @@ always @(*) begin
         STATE_DONE:        cs( 0,                    0,                1,     1,     0,       0,                  0,    1,   0,   0    );
     endcase
 end
+endmodule
 
 //Datapath
 module spi_master_dpath
@@ -162,12 +163,12 @@ logic outbound_mosi;
 
 shiftreg #(32) first 
 (
-    .shift_en = (sclk_posedge),
-    .in = (1'b0),
-    .load_data = (recv_msg << (nbits - packet_size)), //adjust here
-    .load_en = (recv_rdy && recv_val), //adjsut here
-    .out = (outbound_mosi),
-    .reset = ()
+    .shift_en (sclk_posedge),
+    .in (1'b0),
+    .load_data (recv_msg << (nbits - packet_size)), //adjust here
+    .load_en (recv_rdy && recv_val), //adjsut here
+    .out (outbound_mosi),
+    .reset ()
 
 );
 
@@ -177,23 +178,23 @@ logic outbound_send_msg;
 
 shiftreg #(32) second 
 (
-    .shift_en = (sclk_negedge),
-    .in = (miso),
-    .load_data = (1'b0), //adjust here
-    .load_en = (1'b0), //adjsut here
-    .out = (outbound_send_msg),
-    .reset = ()
+    .shift_en (sclk_negedge),
+    .in (miso),
+    .load_data (1'b0), //adjust here
+    .load_en (1'b0), //adjsut here
+    .out (outbound_send_msg),
+    .reset ()
 
 );
 
 // counter
 counter #(32) counting
 (
-    .en = (count_increment),
-    .clk = (),
-    .rst = (count_reset),
-    .out = (count),
-    .in = ()
+    .en (count_increment),
+    .clk (),
+    .rst (count_reset),
+    .out (count),
+    .in ()
     
 );
 
