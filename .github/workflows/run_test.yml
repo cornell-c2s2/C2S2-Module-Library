@@ -42,9 +42,7 @@ jobs:
       run: |
         sudo apt-get install -y graphviz
         pip install --upgrade pip
-        pip install pymtl3
-        pip install numpy
-        pip install fxpmath
+        pip install -r requirements.txt
     - name: Run tests
       timeout-minutes: 5
       run: |
