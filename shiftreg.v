@@ -8,13 +8,13 @@ module shiftreg #(parameter bitwidth = 32)
     output logic out
 );
 
-    logic [bitwidth-1:0] regval;
+    logic [bitwidth:0] regval;
  
-    always @(posedge clk) begin
-        if (reset) regval <= {bitwidth{1'b0}};
-        else if (load_en) regval <= load_data;
-        else if (~load_en & shift_en) regval <= {regval[bitwidth-2:0],in};
+    always @(*) begin
+        if (load_en) regval <= load_data;
+        else if (shift_en) regval <= regval >> 1;
+        else if (reset) regval <= 32'b0;
         else regval <= regval;
     end
-    assign out = regval[bitwidth-1];
+    assign out = regval[0];
 endmodule

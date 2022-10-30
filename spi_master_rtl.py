@@ -55,6 +55,6 @@ class SPIMasterValRdyVRTL( VerilogPlaceholder, Component ):
 if rtl_language == 'pymtl':
   from .SPIMasterValRdyPRTL import SPIMasterValRdyPRTL as SPIMasterValRdyRTL
 elif rtl_language == 'verilog':
-  SPIMasterValRdyRTL = spi-master
+  SPIMasterValRdyRTL = spi_master
 else:
   raise Exception("Invalid RTL language!")
