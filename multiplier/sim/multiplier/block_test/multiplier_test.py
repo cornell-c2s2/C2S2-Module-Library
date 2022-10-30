@@ -2,17 +2,13 @@ import pytest
 from pymtl3 import *
 from pymtl3.passes.PassGroups import DefaultPassGroup
 from pymtl3.passes.backends.verilog import *
-from fxpmath import Fxp
+from fixedpt import Fixed
 from multiplier import fpmulit
 from random import randint
 
 # return a random fxp value
-def rand_fxp(s, n, d):
-	x = Fxp(0, s, n, d, overflow='wrap')
-	x.set_val(randint(0, 2**n-1), raw=True)
-	x.config.op_sizing = 'same'
-	x.rounding = 'floor'
-	return x
+def rand_fixed(s, n, d):
+	return Fixed(randint(0, (1<<n)-1), s, n, d, raw=True)
 
 # Initialize a simulatable model
 def create_model(n, d, s, dump_vcd=None):
@@ -50,16 +46,13 @@ def test_with_dump():
 	
 	model = create_model(n, d, s, dump_vcd='test_with_dump');
 
-	a = Fxp(3.7, s, n, d, overflow='wrap')
-	a.config.op_sizing = 'same'
-	a.rounding = 'floor'
-	b = Fxp(4.2, s, n, d, overflow='wrap')
-	c = a * b; # approximately 15.54
+	a = Fixed(3.7, s, n, d)
+	b = Fixed(4.2, s, n, d)
+	c = (a * b).resize(s, n, d);
 
-	out = Fxp(0, s, n, d, overflow='wrap')
-	out.set_val(int(eval_until_ready(model, a, b)), raw=True)
+	out = Fixed(int(eval_until_ready(model, a, b)), s, n, d, raw=True)
 
-	print(c.bin(), out.bin())
+	print(c.bin(dot=True), out.bin(dot=True))
 
 	assert c.bin() == out.bin()
 
@@ -73,44 +66,40 @@ def test_edge():
 		(2, 1, 1, 0.5, -0.5),
 		(6, 3, 1, -4, -0.125), #100.000 * 111.111 = 000.100
 		(6, 3, 1, 3.875, -0.125), #-0.375
-
 	]
 
 	for (n, d, s, a, b) in cases:
-		a = Fxp(a, s, n, d, overflow='wrap')
-		a.config.op_sizing = 'same'
-		a.rounding = 'floor'
-		b = Fxp(b, s, n, d, overflow='wrap')
+		a = Fixed(a, s, n, d)
+		b = Fixed(b, s, n, d)
 
 		model = create_model(n, d, s, dump_vcd='edge')
 
-		out = Fxp(0, s, n, d, overflow='wrap')
-		out.set_val(int(eval_until_ready(model, a, b)), raw=True)
+		out = Fixed(int(eval_until_ready(model, a, b)), s, n, d, raw=True)
 
-		c = a * b
-		print("%s * %s = %s, got %s" % (a.bin(frac_dot=True), b.bin(frac_dot=True), c.bin(frac_dot=True), out.bin(frac_dot=True)))
+		c = (a * b).resize(s, n, d)
+		print("%s * %s = %s, got %s" % (a.bin(dot=True), b.bin(dot=True), c.bin(dot=True), out.bin(dot=True)))
 		assert c.bin() == out.bin()
 
-def test_random_individual():
-	mmn = (1, 32) # minimum and maximum number of bits to use
+@pytest.mark.parametrize('execution_number', range(100)) # run this test 100 times
+def test_random_individual(execution_number):
+	mmn = (1, 64) # minimum and maximum number of bits to use
 	
-	for i in range(100):
-		n = randint(mmn[0], mmn[1])
-		s = randint(0, min(n-1,1)) # signed or not signed
-		d = randint(0, n-s) # decimal bits
+	n = randint(mmn[0], mmn[1])
+	s = randint(0, min(n-1,1)) # signed or not signed
+	d = randint(0, n-s) # decimal bits
 
-		a = rand_fxp(s, n, d)
-		b = rand_fxp(s, n, d)
+	a = rand_fixed(s, n, d)
+	b = rand_fixed(s, n, d)
 
-		model = create_model(n, d, s, dump_vcd='random_individual');
+	model = create_model(n, d, s, dump_vcd='random_individual');
 
-		out = Fxp(0, s, n, d, overflow='wrap')
-		out.set_val(int(eval_until_ready(model, a, b)), raw=True)
+	out = Fixed(int(eval_until_ready(model, a, b)), s, n, d, raw=True)
 
-		c = a * b
-		print("%s * %s = %s, got %s" % (a.bin(frac_dot=True), b.bin(frac_dot=True), c.bin(frac_dot=True), out.bin(frac_dot=True)))
-		print("%s * %s = %s, got %s" % (a, b, c, out))
-		assert c.bin() == out.bin()
+	c = (a * b).resize(s, n, d)
+	print("%s * %s = %s, got %s" % (a.bin(dot=True), b.bin(dot=True), c.bin(dot=True), out.bin(dot=True)))
+	print("%s * %s = %s, got %s" % (a, b, c, out))
+	assert c.bin() == out.bin()
+		
 
 
 
