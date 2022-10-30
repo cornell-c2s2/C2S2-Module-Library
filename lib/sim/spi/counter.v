@@ -1,22 +1,17 @@
-module counter #(parameter bitwidth = 32) (CLK, LD, EN, IN, OUT);
-    input logic [bitwidth-1:0] IN;
+module counter #(parameter bitwidth = 32) (en, rst, out);
+    input logic in;
     input logic CLK, LD, EN;
-    output logic [bitwidth-1:0] OUT;
+    output logic [bitwidth] out;
 
-    logic [bitwidth-1:0] count;
-    always @(posedge CLK) begin
-        if (LD) begin
-            count <= IN;
-        end
-        else begin
-            if (EN) begin
-                count <= count - 1;
-            end
-            else
-                count <= count;
-            end
-        end
+    logic [5:0] count;
+    always @(posedge en) begin
+        count = count + 1;
     end
-    assign OUT = count;
+
+    always @(posedge rst) begin
+        count = 0;
+    end
+    
+    assign out = count;
 endmodule
             
