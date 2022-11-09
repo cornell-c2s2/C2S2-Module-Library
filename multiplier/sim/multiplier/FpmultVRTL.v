@@ -29,8 +29,9 @@ module FpmultVRTL
 	logic [n-1:0] a, b;
 	logic [n-1:0] c;
 
-	assign a = recv_msg[n-1:(n/2)];
-	assign b = recv_msg[(n/2)-1:0];
+	assign a = recv_msg[2*n-1:n];
+	assign b = recv_msg[n-1:0];
+  assign send_msg = c;
 
   logic a_mux_sel;
   logic b_mux_sel;
@@ -115,14 +116,16 @@ module fpmult_datapath
   logic [(n+d)-1:0] result_reg_out;
 
   logic [(n+d)-1:0] add_mux_out;
+  logic [(n+d)-1:0] adder_out;
 
-  assign b_lsb = b_reg_out[0];
-  assign c     = result_reg_out[n-1:0];
+  assign b_lsb     = b_reg_out[0];
+  assign c         = result_reg_out[n-1:0];
+  assign adder_out = result_reg_out + a_reg_out;
 
-  vc_Mux2 #(n)   a_mux      (.in0(a_reg_out >> 1            ), .in1(a),              .sel(a_mux_sel),      .out(a_reg_in));
+  vc_Mux2 #(n)   a_mux      (.in0(a_reg_out << 1            ), .in1(a),              .sel(a_mux_sel),      .out(a_reg_in));
   vc_Mux2 #(n)   b_mux      (.in0(b_reg_out >> 1            ), .in1(b),              .sel(b_mux_sel),      .out(b_reg_in));
-  vc_Mux2 #(n+d) result_mux (.in0(add_mux_out               ), .in1(0),       .sel(result_mux_sel), .out(result_reg_in));
-  vc_Mux2 #(n+d) add_mux    (.in0(result_reg_out + a_reg_out), .in1(result_reg_out), .sel(add_mux_sel),    .out(add_mux_out));
+  vc_Mux2 #(n+d) result_mux (.in0(add_mux_out               ), .in1(0),              .sel(result_mux_sel), .out(result_reg_in));
+  vc_Mux2 #(n+d) add_mux    (.in0(adder_out),                  .in1(result_reg_out), .sel(add_mux_sel),    .out(add_mux_out));
 
   vc_EnResetReg #(n,0)   a_reg      (.clk(clk), .reset(reset), .en(1'b1),      .d(a_reg_in),      .q(a_reg_out));
   vc_EnResetReg #(n,0)   b_reg      (.clk(clk), .reset(reset), .en(1'b1),      .d(b_reg_in),      .q(b_reg_out));
