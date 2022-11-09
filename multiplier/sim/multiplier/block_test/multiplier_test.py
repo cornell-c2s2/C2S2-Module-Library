@@ -1,105 +1,274 @@
+#=========================================================================
+# IntMulFixedLatRTL_test
+#=========================================================================
+
 import pytest
+import random
+
+random.seed(0xdeadbeef)
+
 from pymtl3 import *
-from pymtl3.passes.PassGroups import DefaultPassGroup
-from pymtl3.passes.backends.verilog import *
-from fixedpt import Fixed
-from multiplier import fpmulit
-from random import randint
+from pymtl3.stdlib.test_utils import mk_test_case_table, run_sim
+from pymtl3.stdlib.stream import StreamSourceFL, StreamSinkFL
+from multiplier.multiplier import fpmult
+from multiplier.IntMulMsgs        import IntMulMsgs
 
-# return a random fxp value
-def rand_fixed(s, n, d):
-	return Fixed(randint(0, (1<<n)-1), s, n, d, raw=True)
+#-------------------------------------------------------------------------
+# TestHarness
+#-------------------------------------------------------------------------
 
-# Initialize a simulatable model
-def create_model(n, d, s, dump_vcd=None):
-	model = fpmulit(n, d, s)
-	model.elaborate()
-	model.apply(VerilogPlaceholderPass())
-	model = VerilogTranslationImportPass()( model )
-	if dump_vcd is not None:
-		model.apply(DefaultPassGroup(vcdwave=dump_vcd))
-	else:
-		model.apply(DefaultPassGroup())
-	model.sim_reset()
+class TestHarness( Component ):
 
-	return model
+  def construct( s, imul ):
 
-# run the multiplier until output
-def eval_until_ready(model, a, b, max_cycles = 1000):
-	model.a @= int(a.bin(), 2)
-	model.b @= int(b.bin(), 2)
-	model.snd_val @= 1
-	model.sim_eval_combinational()
-	
-	while int(model.snd_rdy) == 1:
-		model.sim_tick()
+    # Instantiate models
 
-	for _ in range(max_cycles): # Abort after too many cycles have passed
-		if int(model.rcv_val) == 1:
-			return model.c
-		model.sim_tick()
-	
-	return None
+    s.src  = StreamSourceFL( Bits64 )
+    s.sink = StreamSinkFL( Bits32 )
+    s.imul = imul
 
-def test_with_dump():
-	n, d, s = 32, 16, 1 # 32 bit signed fixed point numbers with 16 bits allocated for decimal
-	
-	model = create_model(n, d, s, dump_vcd='test_with_dump');
+    # Connect
 
-	a = Fixed(3.7, s, n, d)
-	b = Fixed(4.2, s, n, d)
-	c = (a * b).resize(s, n, d);
+    s.src.ostream  //= s.imul.istream
+    s.imul.ostream //= s.sink.istream
 
-	out = Fixed(int(eval_until_ready(model, a, b)), s, n, d, raw=True)
+  def done( s ):
+    return s.src.done() and s.sink.done()
 
-	print(c.bin(dot=True), out.bin(dot=True))
+  def line_trace( s ):
+    return s.src.line_trace() + " > " + s.imul.line_trace() + " > " + s.sink.line_trace()
 
-	assert c.bin() == out.bin()
+#-------------------------------------------------------------------------
+# mk_req_msg
+#-------------------------------------------------------------------------
 
-def test_edge():
-	cases = [
-		(3, 0, 1, 3, 3), # overflow check
-		(2, 0, 0, 2, 2), # unsigned overflow check
-		(1, 1, 0, 1, 1), # 1 bit numbers (0.5 * 0.5 = 0)
-		(3, 3, 0, 0.5, 0.5), # unsigned number with no non-decimal bits
-		(2, 1, 0, 0.5, 1.5),
-		(2, 1, 1, 0.5, -0.5),
-		(6, 3, 1, -4, -0.125), #100.000 * 111.111 = 000.100
-		(6, 3, 1, 3.875, -0.125), #-0.375
-	]
+def req( a, b ):
+  a = a % 2**32
+  b = b % 2**32
+  return IntMulMsgs.req( a, b )
 
-	for (n, d, s, a, b) in cases:
-		a = Fixed(a, s, n, d)
-		b = Fixed(b, s, n, d)
+def resp( a ):
+  a = a % 2**32
+  return IntMulMsgs.resp( a )
 
-		model = create_model(n, d, s, dump_vcd='edge')
+#----------------------------------------------------------------------
+# Test Case: small positive * positive
+#----------------------------------------------------------------------
 
-		out = Fixed(int(eval_until_ready(model, a, b)), s, n, d, raw=True)
+small_pos_pos_msgs = [
+  req(  2,  3 ), resp(   6 ),
+  req(  4,  5 ), resp(  20 ),
+  req(  3,  4 ), resp(  12 ),
+  req( 10, 13 ), resp( 130 ),
+  req(  8,  7 ), resp(  56 ),
+]
 
-		c = (a * b).resize(s, n, d)
-		print("%s * %s = %s, got %s" % (a.bin(dot=True), b.bin(dot=True), c.bin(dot=True), out.bin(dot=True)))
-		assert c.bin() == out.bin()
+#----------------------------------------------------------------------
+# Test Case: small negative * positive
+#----------------------------------------------------------------------
 
-@pytest.mark.parametrize('execution_number', range(100)) # run this test 100 times
-def test_random_individual(execution_number):
-	mmn = (1, 64) # minimum and maximum number of bits to use
-	
-	n = randint(mmn[0], mmn[1])
-	s = randint(0, min(n-1,1)) # signed or not signed
-	d = randint(0, n-s) # decimal bits
+small_neg_pos_msgs = [
+  req(  -2,  3 ), resp(   -6 ),
+  req(  -4,  5 ), resp(  -20 ),
+  req(  -3,  4 ), resp(  -12 ),
+  req( -10, 13 ), resp( -130 ),
+  req(  -8,  7 ), resp(  -56 ),
+]
 
-	a = rand_fixed(s, n, d)
-	b = rand_fixed(s, n, d)
+#----------------------------------------------------------------------
+# Test Case: small positive * negative
+#----------------------------------------------------------------------
 
-	model = create_model(n, d, s, dump_vcd='random_individual');
+small_pos_neg_msgs = [
+  req(  2,  -3 ), resp(   -6 ),
+  req(  4,  -5 ), resp(  -20 ),
+  req(  3,  -4 ), resp(  -12 ),
+  req( 10, -13 ), resp( -130 ),
+  req(  8,  -7 ), resp(  -56 ),
+]
 
-	out = Fixed(int(eval_until_ready(model, a, b)), s, n, d, raw=True)
+#----------------------------------------------------------------------
+# Test Case: small negative * negative
+#----------------------------------------------------------------------
 
-	c = (a * b).resize(s, n, d)
-	print("%s * %s = %s, got %s" % (a.bin(dot=True), b.bin(dot=True), c.bin(dot=True), out.bin(dot=True)))
-	print("%s * %s = %s, got %s" % (a, b, c, out))
-	assert c.bin() == out.bin()
-		
+small_neg_neg_msgs = [
+  req(  -2,  -3 ), resp(   6 ),
+  req(  -4,  -5 ), resp(  20 ),
+  req(  -3,  -4 ), resp(  12 ),
+  req( -10, -13 ), resp( 130 ),
+  req(  -8,  -7 ), resp(  56 ),
+]
 
+#----------------------------------------------------------------------
+# Test Case: large positive * positive
+#----------------------------------------------------------------------
+
+large_pos_pos_msgs = [
+  req( 0x0bcd0000, 0x0000abcd ), resp( 0x62290000 ),
+  req( 0x0fff0000, 0x0000ffff ), resp( 0xf0010000 ),
+  req( 0x0fff0000, 0x0fff0000 ), resp( 0x00000000 ),
+  req( 0x04e5f14d, 0x7839d4fc ), resp( 0x10524bcc ),
+]
+
+#----------------------------------------------------------------------
+# Test Case: large negative * negative
+#----------------------------------------------------------------------
+
+large_neg_neg_msgs = [
+  req( 0x80000001, 0x80000001 ), resp( 0x00000001 ),
+  req( 0x8000abcd, 0x8000ef00 ), resp( 0x20646300 ),
+  req( 0x80340580, 0x8aadefc0 ), resp( 0x6fa6a000 ),
+]
+
+#----------------------------------------------------------------------
+# Test Case: zeros
+#----------------------------------------------------------------------
+
+zeros_msgs = [
+  req(  0,  0 ), resp(   0 ),
+  req(  0,  1 ), resp(   0 ),
+  req(  1,  0 ), resp(   0 ),
+  req(  0, -1 ), resp(   0 ),
+  req( -1,  0 ), resp(   0 ),
+]
+#----------------------------------------------------------------------
+# Test Case: random small
+#----------------------------------------------------------------------
+
+random_small_msgs = []
+for i in range(50):
+  a = random.randint(0,100)
+  b = random.randint(0,100)
+  random_small_msgs.extend([ req( a, b ), resp( a * b ) ])
+
+#----------------------------------------------------------------------
+# Test Case: random large
+#----------------------------------------------------------------------
+
+random_large_msgs = []
+for i in range(50):
+  a = random.randint(0,0xffffffff)
+  b = random.randint(0,0xffffffff)
+  random_large_msgs.extend([ req( a, b ), resp( a * b ) ])
+
+#----------------------------------------------------------------------
+# Test Case: lomask
+#----------------------------------------------------------------------
+
+random_lomask_msgs = []
+for i in range(50):
+
+  shift_amount = random.randint(0,16)
+  a = random.randint(0,0xffffffff) << shift_amount
+
+  shift_amount = random.randint(0,16)
+  b = random.randint(0,0xffffffff) << shift_amount
+
+  random_lomask_msgs.extend([ req( a, b ), resp( a * b ) ])
+
+#----------------------------------------------------------------------
+# Test Case: himask
+#----------------------------------------------------------------------
+
+random_himask_msgs = []
+for i in range(50):
+
+  shift_amount = random.randint(0,16)
+  a = random.randint(0,0xffffffff) >> shift_amount
+
+  shift_amount = random.randint(0,16)
+  b = random.randint(0,0xffffffff) >> shift_amount
+
+  random_himask_msgs.extend([ req( a, b ), resp( a * b ) ])
+
+#----------------------------------------------------------------------
+# Test Case: lohimask
+#----------------------------------------------------------------------
+
+random_lohimask_msgs = []
+for i in range(50):
+
+  rshift_amount = random.randint(0,12)
+  lshift_amount = random.randint(0,12)
+  a = (random.randint(0,0xffffff) >> rshift_amount) << lshift_amount
+
+  rshift_amount = random.randint(0,12)
+  lshift_amount = random.randint(0,12)
+  b = (random.randint(0,0xffffff) >> rshift_amount) << lshift_amount
+
+  random_lohimask_msgs.extend([ req( a, b ), resp( a * b ) ])
+
+#----------------------------------------------------------------------
+# Test Case: sparse
+#----------------------------------------------------------------------
+
+random_sparse_msgs = []
+for i in range(50):
+
+  a = random.randint(0,0xffffffff)
+
+  for i in range(32):
+    is_masked = random.randint(0,1)
+    if is_masked:
+      a = a & ( (~(1 << i)) & 0xffffffff )
+
+  b = random.randint(0,0xffffffff)
+
+  for i in range(32):
+    is_masked = random.randint(0,1)
+    if is_masked:
+      b = b & ( (~(1 << i)) & 0xffffffff )
+
+  random_sparse_msgs.extend([ req( a, b ), resp( a * b ) ])
+
+#-------------------------------------------------------------------------
+# Test Case Table
+#-------------------------------------------------------------------------
+
+test_case_table = mk_test_case_table([
+  (                      "msgs                 src_delay sink_delay"),
+  [ "small_pos_pos",     small_pos_pos_msgs,   0,        0          ],
+  [ "small_neg_pos",     small_neg_pos_msgs,   0,        0          ],
+  [ "small_pos_neg",     small_pos_neg_msgs,   0,        0          ],
+  [ "small_neg_neg",     small_neg_neg_msgs,   0,        0          ],
+  [ "large_pos_pos",     large_pos_pos_msgs,   0,        0          ],
+  [ "large_neg_neg",     large_neg_neg_msgs,   0,        0          ],
+  [ "zeros",             zeros_msgs,           0,        0          ],
+  [ "random_small",      random_small_msgs,    0,        0          ],
+  [ "random_large",      random_large_msgs,    0,        0          ],
+  [ "random_lomask",     random_lomask_msgs,   0,        0          ],
+  [ "random_himask",     random_himask_msgs,   0,        0          ],
+  [ "random_lohimask",   random_lohimask_msgs, 0,        0          ],
+  [ "random_sparse",     random_sparse_msgs,   0,        0          ],
+  [ "random_small_3x14", random_small_msgs,    3,        14         ],
+  [ "random_large_3x14", random_large_msgs,    3,        14         ],
+])
+
+#-------------------------------------------------------------------------
+# TestHarness
+#-------------------------------------------------------------------------
+
+@pytest.mark.parametrize( **test_case_table )
+def test( test_params ):
+
+  th = TestHarness( fpmult() )
+
+  th.set_param("top.src.construct",
+    msgs=test_params.msgs[::2],
+    initial_delay=test_params.src_delay+3,
+    interval_delay=test_params.src_delay )
+
+  th.set_param("top.sink.construct",
+    msgs=test_params.msgs[1::2],
+    initial_delay=test_params.sink_delay+3,
+    interval_delay=test_params.sink_delay )
+
+  run_sim( th, cmdline_opts={'dump_textwave'      : False,
+                             'dump_vcd'           : True,
+                             'test_verilog'       : False,
+                             'test_yosys_verilog' : False,
+                             'max_cycles'         : None,
+                             'dump_vtb'           : ''},
+ duts=['fpmult'] )
 
 
