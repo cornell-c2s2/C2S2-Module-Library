@@ -5,7 +5,7 @@
 `include "regs.v"
 
 
-module fpmult
+module FpmultVRTL
  #(
 	parameter n = 32, // bit width
 	parameter d = 16 // number of decimal bits
@@ -14,13 +14,13 @@ module fpmult
 	input  logic 		       clk, 
 	input  logic 		       reset,
 
-	input  logic		       istream_val, //rcv_val, 
-	output logic 		       istream_rdy, //rcv_rdy, 
-	input  logic [2*n-1:0] istream_msg, //a and b
+	input  logic		       recv_val, //rcv_val, 
+	output logic 		       recv_rdy, //rcv_rdy, 
+	input  logic [2*n-1:0] recv_msg, //a and b
 
-  output logic 		       ostream_val, //snd_val, 
-	input  logic	         ostream_rdy, //snd_rdy,
-	output logic [n-1:0]   ostream_msg //c
+  output logic 		       send_val, //snd_val, 
+	input  logic	         send_rdy, //snd_rdy,
+	output logic [n-1:0]   send_msg //c
 	);
 
 	// performs the operation c = a*b
@@ -29,8 +29,8 @@ module fpmult
 	logic [n-1:0] a, b;
 	logic [n-1:0] c;
 
-	assign a = istream_msg[n-1:(n/2)];
-	assign b = istream_msg[(n/2)-1:0];
+	assign a = recv_msg[n-1:(n/2)];
+	assign b = recv_msg[(n/2)-1:0];
 
   logic a_mux_sel;
   logic b_mux_sel;
@@ -46,11 +46,11 @@ module fpmult
   .clk(clk),
   .reset(reset),
 
-  .istream_val(istream_val),
-  .istream_rdy(istream_rdy),
+  .recv_val(recv_val),
+  .recv_rdy(recv_rdy),
 
-  .ostream_val(ostream_val),
-  .ostream_rdy(ostream_rdy),
+  .send_val(send_val),
+  .send_rdy(send_rdy),
 
   .a_mux_sel(a_mux_sel),
   .b_mux_sel(b_mux_sel),
@@ -140,11 +140,11 @@ module fpmulit_control
   input  clk,
   input  reset,
 
-  input  logic istream_val,
-  output logic istream_rdy,
+  input  logic recv_val,
+  output logic recv_rdy,
 
-  output logic ostream_val,
-  input  logic ostream_rdy,
+  output logic send_val,
+  input  logic send_rdy,
 
   output logic a_mux_sel,
   output logic b_mux_sel,
@@ -164,13 +164,13 @@ module fpmulit_control
   logic [2:0] next_state;
   logic [2:0] state;
   logic       count_en;
-  logic       counter;
+  logic [7:0] counter;
   logic       cnt_rst;
 
   always @(*) begin
     case(state)
       IDLE: begin
-       if(istream_val) next_state = CALC;
+       if(recv_val) next_state = CALC;
        else            next_state = IDLE;
       end
       CALC: begin
@@ -178,7 +178,7 @@ module fpmulit_control
        else             next_state = CALC;
       end
       DONE: begin
-        if(ostream_rdy) next_state = IDLE;
+        if(send_rdy) next_state = IDLE;
         else            next_state = DONE; 
       end 
       default: next_state = IDLE;
@@ -189,21 +189,21 @@ module fpmulit_control
   always @(*) begin
     case(state)
       IDLE: begin
-        a_mux_sel = 1; b_mux_sel = 1; result_mux_sel = 1; add_mux_sel = 0; result_en = 1; count_en = 0; cnt_rst =0;
+        a_mux_sel = 1; b_mux_sel = 1; result_mux_sel = 1; add_mux_sel = 0; result_en = 1; count_en = 0; cnt_rst =0; recv_rdy = 1; send_val = 0;
       end
       CALC: begin
         if(b_lsb) begin 
-          a_mux_sel = 0; b_mux_sel = 0; result_mux_sel = 0; add_mux_sel = 0; result_en = 1; count_en = 1; cnt_rst =0;
+          a_mux_sel = 0; b_mux_sel = 0; result_mux_sel = 0; add_mux_sel = 0; result_en = 1; count_en = 1; cnt_rst =0; recv_rdy = 0; send_val = 0;
         end
         else begin 
-          a_mux_sel = 0; b_mux_sel = 0; result_mux_sel = 0; add_mux_sel = 1; result_en = 1; count_en = 1; cnt_rst =0;
+          a_mux_sel = 0; b_mux_sel = 0; result_mux_sel = 0; add_mux_sel = 1; result_en = 1; count_en = 1; cnt_rst =0; recv_rdy = 0; send_val = 0;
         end
       end
       DONE: begin
-        a_mux_sel = 0; b_mux_sel = 0; result_mux_sel = 0; add_mux_sel = 1; result_en = 0; count_en = 0; cnt_rst =1;
+        a_mux_sel = 0; b_mux_sel = 0; result_mux_sel = 0; add_mux_sel = 1; result_en = 0; count_en = 0; cnt_rst =1; recv_rdy = 0; send_val = 1;
       end
       default: begin
-        a_mux_sel = 1; b_mux_sel = 1; result_mux_sel = 1; add_mux_sel = 0; result_en = 1; count_en = 0; cnt_rst =0;
+        a_mux_sel = 1; b_mux_sel = 1; result_mux_sel = 1; add_mux_sel = 0; result_en = 1; count_en = 0; cnt_rst =0; recv_rdy = 0; send_val = 0;
       end
     endcase
   end
@@ -214,14 +214,12 @@ module fpmulit_control
     end
     else begin     
       state <= next_state;
-      if(count_en) counter <= counter + 1;
-      else         counter <= counter;
     end
   end
 
   always @(posedge clk) begin
     if(reset || cnt_rst) begin
-      counter = 0;
+      counter <= 0;
     end
     else if(count_en) counter <= counter + 1;
     else counter <= counter;

@@ -1,1 +1,1 @@
-from .multiplier import fpmult
+from .fpmultRTL import fpmult

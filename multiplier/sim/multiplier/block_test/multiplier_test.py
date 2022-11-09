@@ -8,10 +8,10 @@ import random
 random.seed(0xdeadbeef)
 
 from pymtl3 import *
+from pymtl3.stdlib import stream
 from pymtl3.stdlib.test_utils import mk_test_case_table, run_sim
-from pymtl3.stdlib.stream import StreamSourceFL, StreamSinkFL
-from multiplier.multiplier import fpmult
-from multiplier.IntMulMsgs        import IntMulMsgs
+from multiplier.fpmultRTL    import fpmult
+from multiplier.IntMulMsgs    import IntMulMsgs
 
 #-------------------------------------------------------------------------
 # TestHarness
@@ -19,24 +19,24 @@ from multiplier.IntMulMsgs        import IntMulMsgs
 
 class TestHarness( Component ):
 
-  def construct( s, imul ):
+  def construct( s, fpmult ):
 
     # Instantiate models
 
-    s.src  = StreamSourceFL( Bits64 )
-    s.sink = StreamSinkFL( Bits32 )
-    s.imul = imul
+    s.src  = stream.SourceRTL( IntMulMsgs.req )
+    s.sink = stream.SinkRTL( IntMulMsgs.resp )
+    s.fpmult = fpmult
 
     # Connect
 
-    s.src.ostream  //= s.imul.istream
-    s.imul.ostream //= s.sink.istream
+    s.src.send  //= s.fpmult.recv
+    s.fpmult.send //= s.sink.recv
 
   def done( s ):
     return s.src.done() and s.sink.done()
 
   def line_trace( s ):
-    return s.src.line_trace() + " > " + s.imul.line_trace() + " > " + s.sink.line_trace()
+    return s.src.line_trace() + " > " + s.fpmult.line_trace() + " > " + s.sink.line_trace()
 
 #-------------------------------------------------------------------------
 # mk_req_msg
@@ -249,7 +249,7 @@ test_case_table = mk_test_case_table([
 #-------------------------------------------------------------------------
 
 @pytest.mark.parametrize( **test_case_table )
-def test( test_params ):
+def test( test_params, cmdline_opts ):
 
   th = TestHarness( fpmult() )
 
@@ -263,12 +263,6 @@ def test( test_params ):
     initial_delay=test_params.sink_delay+3,
     interval_delay=test_params.sink_delay )
 
-  run_sim( th, cmdline_opts={'dump_textwave'      : False,
-                             'dump_vcd'           : True,
-                             'test_verilog'       : False,
-                             'test_yosys_verilog' : False,
-                             'max_cycles'         : None,
-                             'dump_vtb'           : ''},
- duts=['fpmult'] )
+  run_sim( th, cmdline_opts, duts=['fpmult'] )
 
 
