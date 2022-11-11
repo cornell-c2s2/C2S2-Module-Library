@@ -24,8 +24,6 @@ import os
 import sys
 
 sim_dir = os.path.dirname( os.path.abspath( __file__ ) )
-print(sim_dir)
-print(sim_dir + os.path.sep + "pymtl.ini")
 while sim_dir:
   if os.path.exists( sim_dir + os.path.sep + "pymtl.ini" ):
     sys.path.insert(0,sim_dir)
