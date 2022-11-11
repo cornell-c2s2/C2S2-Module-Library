@@ -31,7 +31,7 @@ module FpmultVRTL
 
 	assign a = recv_msg[2*n-1:n];
 	assign b = recv_msg[n-1:0];
-  assign send_msg = c >> d;
+  assign send_msg = c;
 
   logic a_mux_sel;
   logic b_mux_sel;
@@ -118,7 +118,7 @@ module fpmult_datapath
   logic [(n+d)-1:0] add_mux_out;
   logic [(n+d)-1:0] adder_out;
 
-  assign b_lsb     = b_reg_out[0];
+  assign b_lsb     = b_reg_out[d];
   assign c         = result_reg_out[n-1:0];
   assign adder_out = result_reg_out + { {d{a_reg_out[n-1]}},a_reg_out[n-1:0]};;
 
