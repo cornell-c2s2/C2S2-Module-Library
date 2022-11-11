@@ -24,11 +24,14 @@ import os
 import sys
 
 sim_dir = os.path.dirname( os.path.abspath( __file__ ) )
+print(sim_dir)
+print(sim_dir + os.path.sep + "pymtl.ini")
 while sim_dir:
   if os.path.exists( sim_dir + os.path.sep + "pymtl.ini" ):
     sys.path.insert(0,sim_dir)
     break
   sim_dir = os.path.dirname(sim_dir)
+
 
 import argparse
 import re
@@ -40,15 +43,12 @@ from pymtl3.passes.backends.verilog import VerilogPlaceholderPass
 # from lab1_imul.IntMulFixedLatCL  import IntMulFixedLatCL
 # from lab1_imul.IntMulVarLatCL    import IntMulVarLatCL
 # from lab1_imul.IntMulNstageCL    import IntMulNstageCL
-from lab1_imul.IntMulScycleRTL   import IntMulScycleRTL
-from lab1_imul.IntMulFixedLatRTL import IntMulFixedLatRTL
-from lab1_imul.IntMulVarLatRTL   import IntMulVarLatRTL
-from lab1_imul.IntMulNstageRTL   import IntMulNstageRTL
+from multiplier.fpmultRTL   import fpmultVRTL
 
-from lab1_imul.block_test.IntMulFixedLatRTL_test import TestHarness
-from lab1_imul.block_test.IntMulFixedLatRTL_test import random_small_msgs, random_large_msgs
-from lab1_imul.block_test.IntMulFixedLatRTL_test import random_lomask_msgs, random_himask_msgs
-from lab1_imul.block_test.IntMulFixedLatRTL_test import random_lohimask_msgs, random_sparse_msgs
+from multiplier.fpmultRTL.multiplier_test import TestHarness
+from multiplier.fpmultRTL.multiplier_test import random_small_msgs, random_large_msgs
+from multiplier.fpmultRTL.multiplier_test import random_lomask_msgs, random_himask_msgs
+from multiplier.fpmultRTL.multiplier_test import random_lohimask_msgs, random_sparse_msgs
 
 #-------------------------------------------------------------------------
 # Command line processing
@@ -103,7 +103,7 @@ def main():
   # Create the input pattern
 
   inputs  = None
-
+  print("here")
   if   opts.input == "small":    inputs = random_small_msgs
   elif opts.input == "large":    inputs = random_large_msgs
   elif opts.input == "lomask":   inputs = random_lomask_msgs
@@ -119,10 +119,7 @@ def main():
     # "cl-fixed"  : IntMulFixedLatCL,
     # "cl-var"    : IntMulVarLatCL,
     # "cl-nstage" : IntMulNstageCL,
-    "rtl-scycle": IntMulScycleRTL,
-    "rtl-fixed" : IntMulFixedLatRTL,
-    "rtl-var"   : IntMulVarLatRTL,
-    "rtl-nstage": IntMulNstageRTL,
+    "rtl-scycle": FpmultVRTL,
   }
 
   # Check if translation is valid
@@ -184,5 +181,5 @@ def main():
   if opts.stats:
     print( f"num_cycles         = {th.sim_cycle_count()}" )
     print( f"num_cycles_per_mul = {th.sim_cycle_count()/(1.0*ninputs):1.2f}" )
-
+    
 main()

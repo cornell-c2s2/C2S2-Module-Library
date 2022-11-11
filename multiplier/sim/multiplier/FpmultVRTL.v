@@ -120,7 +120,7 @@ module fpmult_datapath
 
   assign b_lsb     = b_reg_out[0];
   assign c         = result_reg_out[n-1:0];
-  assign adder_out = result_reg_out + a_reg_out;
+  assign adder_out = result_reg_out + { {d{a_reg_out[n-1]}},a_reg_out[n-1:0]};;
 
   vc_Mux2 #(n)   a_mux      (.in0(a_reg_out << 1            ), .in1(a),              .sel(a_mux_sel),      .out(a_reg_in));
   vc_Mux2 #(n)   b_mux      (.in0(b_reg_out >> 1            ), .in1(b),              .sel(b_mux_sel),      .out(b_reg_in));
