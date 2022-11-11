@@ -31,7 +31,7 @@ module FpmultVRTL
 
 	assign a = recv_msg[2*n-1:n];
 	assign b = recv_msg[n-1:0];
-  assign send_msg = c;
+  assign send_msg = c >> d;
 
   logic a_mux_sel;
   logic b_mux_sel;

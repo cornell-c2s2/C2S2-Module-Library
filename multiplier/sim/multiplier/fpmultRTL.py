@@ -24,7 +24,7 @@ class FpmultVRTL( VerilogPlaceholder, Component ):
 
   # Constructor
 
-  def construct( s ):
+  def construct( s, n=32, d=16 ):
 
     # If translated into Verilog, we use the explicit name
 

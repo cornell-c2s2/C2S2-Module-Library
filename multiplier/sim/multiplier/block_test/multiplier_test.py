@@ -251,7 +251,7 @@ test_case_table = mk_test_case_table([
 @pytest.mark.parametrize( **test_case_table )
 def test( test_params, cmdline_opts ):
 
-  th = TestHarness( fpmult() )
+  th = TestHarness( fpmult(32, 0) )
 
   th.set_param("top.src.construct",
     msgs=test_params.msgs[::2],
