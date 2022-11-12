@@ -21,6 +21,18 @@ from random import randint
 def mk_msg(n, a, b):
 	return (a << n) | b;
 
+# Create test parametrization information
+def mk_params(execution_number, sequence_lengths, n, d):
+	if isinstance(n, int):
+		n = (n, n)
+	if isinstance(d, int):
+		d = (d, d)
+
+	return [
+		(j, i, n, d) for i in sequence_lengths
+		for j in range(execution_number)
+	]
+
 # Test harness for streaming data
 
 class Harness( Component ):
@@ -45,16 +57,8 @@ def rand_fixed(n, d):
 	return Fixed(randint(0, (1<<n)-1), 1, n, d, raw=True)
 
 # Initialize a simulatable model
-def create_model(n, d, dump_vcd=None):
+def create_model(n, d):
 	model = HarnessVRTL(n, d)
-	# model.elaborate()
-	# model.apply(VerilogPlaceholderPass())
-	# model = VerilogTranslationImportPass()( model )
-	# if dump_vcd is not None:
-	# 	model.apply(DefaultPassGroup(vcdwave=dump_vcd))
-	# else:
-	# 	model.apply(DefaultPassGroup())
-	# model.sim_reset()
 
 	return Harness(model, n)
 
@@ -65,14 +69,10 @@ def create_model(n, d, dump_vcd=None):
 	(6, 3, 3.875, -0.125), #-0.375
 ])
 def test_edge(n, d, a, b):
-	print(a, b);
 	a = Fixed(a, 1, n, d)
 	b = Fixed(b, 1, n, d)
 
-	print("%s * %s = %s", a.bin(dot=1), b.bin(dot=1), (a*b).resize(None, n, d).bin(dot=1));
-	print("%s * %s = %s", a.get(), b.get(), (a*b).resize(None, n, d).get());
-
-	model = create_model(n, d, dump_vcd='edge')
+	model = create_model(n, d)
 
 	model.set_param("top.src.construct",
 		msgs=[mk_msg(n, a.get(), b.get())],
@@ -86,25 +86,43 @@ def test_edge(n, d, a, b):
 		interval_delay=0
 	)
 
-	run_sim(model)
+	run_sim(model, cmdline_opts={
+		'dump_textwave':False,
+		'dump_vcd': 'edge',
+		'max_cycles':None
+	})
 
 	# out = Fixed(int(eval_until_ready(model, a, b)), s, n, d, raw=True)
 
 	# c = (a * b).resize(s, n, d)
 	# print("%s * %s = %s, got %s" % (a.bin(dot=True), b.bin(dot=True), c.bin(dot=True), out.bin(dot=True)))
 	# assert c.bin() == out.bin()
-		
-@pytest.mark.parametrize('execution_number, sequence_length', [(None, i) for i in [1, 5, 50] for _ in range(20)])
-def test_random(execution_number, sequence_length): # test individual and sequential multiplications to assure stream system works
-	mmn = (16, 64) # minimum and maximum number of bits to use
+
+@pytest.mark.parametrize('execution_number, sequence_length, n, d', 
+	# Runs tests on 20 randomly sized fixed point numbers, inputting 1, 5, and 50 numbers to the stream
+	mk_params(20, [1, 10, 50, 100], (16, 64), (0, 64))
+	+
+	# Extensively tests numbers with certain important bit sizes.
+	sum(
+		[mk_params(1, [1, 100, 1000], n, d)
+		for (n, d) in [
+			(8, 4),
+			(24, 8),
+			(32, 24),
+			(32, 16),
+			(64, 32),
+		]], []
+	)
+)
+def test_random(execution_number, sequence_length, n, d): # test individual and sequential multiplications to assure stream system works
 	
-	n = randint(mmn[0], mmn[1])
-	d = randint(0, n-1) # decimal bits
+	n = randint(n[0], n[1])
+	d = randint(d[0], min(n-1, d[1])) # decimal bits
 
 	dat = [{'a':rand_fixed(n, d), 'b':rand_fixed(n, d)} for i in range(sequence_length)]
 	solns = [(i['a'] * i['b']).resize(None, n, d) for i in dat]
 
-	model = create_model(n, d, dump_vcd='random_individual')
+	model = create_model(n, d)
 
 	t = mk_bitstruct(
 		"In",
@@ -128,4 +146,8 @@ def test_random(execution_number, sequence_length): # test individual and sequen
 		interval_delay=5
 	)
 
-	run_sim(model)
+	run_sim(model, cmdline_opts={
+		'dump_textwave':False,
+		'dump_vcd':f'rand_{execution_number}_{sequence_length}_{n}_{d}',
+		'max_cycles':(30+(n+2)*len(dat)) # makes sure the time taken grows linearly with respect to n
+	})
