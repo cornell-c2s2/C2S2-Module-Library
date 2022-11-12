@@ -8,261 +8,124 @@ import random
 random.seed(0xdeadbeef)
 
 from pymtl3 import *
+from pymtl3.passes.PassGroups import DefaultPassGroup
+from pymtl3.passes.backends.verilog import *
+from pymtl3.stdlib.test_utils import run_sim
 from pymtl3.stdlib import stream
-from pymtl3.stdlib.test_utils import mk_test_case_table, run_sim
-from multiplier.fpmultRTL    import fpmult
-from multiplier.IntMulMsgs    import IntMulMsgs
+from fixedpt import Fixed
+from multiplier import HarnessVRTL
+from random import randint
 
-#-------------------------------------------------------------------------
-# TestHarness
-#-------------------------------------------------------------------------
 
-class TestHarness( Component ):
+# Merge a and b into a larger number
+def mk_msg(n, a, b):
+	return (a << n) | b;
 
-  def construct( s, fpmult ):
+# Test harness for streaming data
 
-    # Instantiate models
+class Harness( Component ):
+	def construct (s, mult, n):
 
-    s.src  = stream.SourceRTL( IntMulMsgs.req )
-    s.sink = stream.SinkRTL( IntMulMsgs.resp )
-    s.fpmult = fpmult
+		s.mult = mult
 
-    # Connect
+		s.src = stream.SourceRTL(mk_bits(2*n))
 
-    s.src.send  //= s.fpmult.recv
-    s.fpmult.send //= s.sink.recv
+		s.sink = stream.SinkRTL(mk_bits(n))
 
-  def done( s ):
-    return s.src.done() and s.sink.done()
+		s.src.send //= s.mult.recv
+		s.mult.send //= s.sink.recv
 
-  def line_trace( s ):
-    return s.src.line_trace() + " > " + s.fpmult.line_trace() + " > " + s.sink.line_trace()
 
-#-------------------------------------------------------------------------
-# mk_req_msg
-#-------------------------------------------------------------------------
 
-def req( a, b ):
-  a = a % 2**32
-  b = b % 2**32
-  return IntMulMsgs.req( a, b )
+	def done(s):
+		return s.src.done() and s.sink.done()
 
-def resp( a ):
-  a = a % 2**32
-  return IntMulMsgs.resp( a )
+# return a random fxp value
+def rand_fixed(n, d):
+	return Fixed(randint(0, (1<<n)-1), 1, n, d, raw=True)
 
-#----------------------------------------------------------------------
-# Test Case: small positive * positive
-#----------------------------------------------------------------------
+# Initialize a simulatable model
+def create_model(n, d, dump_vcd=None):
+	model = HarnessVRTL(n, d)
+	# model.elaborate()
+	# model.apply(VerilogPlaceholderPass())
+	# model = VerilogTranslationImportPass()( model )
+	# if dump_vcd is not None:
+	# 	model.apply(DefaultPassGroup(vcdwave=dump_vcd))
+	# else:
+	# 	model.apply(DefaultPassGroup())
+	# model.sim_reset()
 
-small_pos_pos_msgs = [
-  req(  2,  3 ), resp(   6 ),
-  req(  4,  5 ), resp(  20 ),
-  req(  3,  4 ), resp(  12 ),
-  req( 10, 13 ), resp( 130 ),
-  req(  8,  7 ), resp(  56 ),
-]
+	return Harness(model, n)
 
-#----------------------------------------------------------------------
-# Test Case: small negative * positive
-#----------------------------------------------------------------------
-
-small_neg_pos_msgs = [
-  req(  -2,  3 ), resp(   -6 ),
-  req(  -4,  5 ), resp(  -20 ),
-  req(  -3,  4 ), resp(  -12 ),
-  req( -10, 13 ), resp( -130 ),
-  req(  -8,  7 ), resp(  -56 ),
-]
-
-#----------------------------------------------------------------------
-# Test Case: small positive * negative
-#----------------------------------------------------------------------
-
-small_pos_neg_msgs = [
-  req(  2,  -3 ), resp(   -6 ),
-  req(  4,  -5 ), resp(  -20 ),
-  req(  3,  -4 ), resp(  -12 ),
-  req( 10, -13 ), resp( -130 ),
-  req(  8,  -7 ), resp(  -56 ),
-]
-
-#----------------------------------------------------------------------
-# Test Case: small negative * negative
-#----------------------------------------------------------------------
-
-small_neg_neg_msgs = [
-  req(  -2,  -3 ), resp(   6 ),
-  req(  -4,  -5 ), resp(  20 ),
-  req(  -3,  -4 ), resp(  12 ),
-  req( -10, -13 ), resp( 130 ),
-  req(  -8,  -7 ), resp(  56 ),
-]
-
-#----------------------------------------------------------------------
-# Test Case: large positive * positive
-#----------------------------------------------------------------------
-
-large_pos_pos_msgs = [
-  req( 0x0bcd0000, 0x0000abcd ), resp( 0x62290000 ),
-  req( 0x0fff0000, 0x0000ffff ), resp( 0xf0010000 ),
-  req( 0x0fff0000, 0x0fff0000 ), resp( 0x00000000 ),
-  req( 0x04e5f14d, 0x7839d4fc ), resp( 0x10524bcc ),
-]
-
-#----------------------------------------------------------------------
-# Test Case: large negative * negative
-#----------------------------------------------------------------------
-
-large_neg_neg_msgs = [
-  req( 0x80000001, 0x80000001 ), resp( 0x00000001 ),
-  req( 0x8000abcd, 0x8000ef00 ), resp( 0x20646300 ),
-  req( 0x80340580, 0x8aadefc0 ), resp( 0x6fa6a000 ),
-]
-
-#----------------------------------------------------------------------
-# Test Case: zeros
-#----------------------------------------------------------------------
-
-zeros_msgs = [
-  req(  0,  0 ), resp(   0 ),
-  req(  0,  1 ), resp(   0 ),
-  req(  1,  0 ), resp(   0 ),
-  req(  0, -1 ), resp(   0 ),
-  req( -1,  0 ), resp(   0 ),
-]
-#----------------------------------------------------------------------
-# Test Case: random small
-#----------------------------------------------------------------------
-
-random_small_msgs = []
-for i in range(50):
-  a = random.randint(0,100)
-  b = random.randint(0,100)
-  random_small_msgs.extend([ req( a, b ), resp( a * b ) ])
-
-#----------------------------------------------------------------------
-# Test Case: random large
-#----------------------------------------------------------------------
-
-random_large_msgs = []
-for i in range(50):
-  a = random.randint(0,0xffffffff)
-  b = random.randint(0,0xffffffff)
-  random_large_msgs.extend([ req( a, b ), resp( a * b ) ])
-
-#----------------------------------------------------------------------
-# Test Case: lomask
-#----------------------------------------------------------------------
-
-random_lomask_msgs = []
-for i in range(50):
-
-  shift_amount = random.randint(0,16)
-  a = random.randint(0,0xffffffff) << shift_amount
-
-  shift_amount = random.randint(0,16)
-  b = random.randint(0,0xffffffff) << shift_amount
-
-  random_lomask_msgs.extend([ req( a, b ), resp( a * b ) ])
-
-#----------------------------------------------------------------------
-# Test Case: himask
-#----------------------------------------------------------------------
-
-random_himask_msgs = []
-for i in range(50):
-
-  shift_amount = random.randint(0,16)
-  a = random.randint(0,0xffffffff) >> shift_amount
-
-  shift_amount = random.randint(0,16)
-  b = random.randint(0,0xffffffff) >> shift_amount
-
-  random_himask_msgs.extend([ req( a, b ), resp( a * b ) ])
-
-#----------------------------------------------------------------------
-# Test Case: lohimask
-#----------------------------------------------------------------------
-
-random_lohimask_msgs = []
-for i in range(50):
-
-  rshift_amount = random.randint(0,12)
-  lshift_amount = random.randint(0,12)
-  a = (random.randint(0,0xffffff) >> rshift_amount) << lshift_amount
-
-  rshift_amount = random.randint(0,12)
-  lshift_amount = random.randint(0,12)
-  b = (random.randint(0,0xffffff) >> rshift_amount) << lshift_amount
-
-  random_lohimask_msgs.extend([ req( a, b ), resp( a * b ) ])
-
-#----------------------------------------------------------------------
-# Test Case: sparse
-#----------------------------------------------------------------------
-
-random_sparse_msgs = []
-for i in range(50):
-
-  a = random.randint(0,0xffffffff)
-
-  for i in range(32):
-    is_masked = random.randint(0,1)
-    if is_masked:
-      a = a & ( (~(1 << i)) & 0xffffffff )
-
-  b = random.randint(0,0xffffffff)
-
-  for i in range(32):
-    is_masked = random.randint(0,1)
-    if is_masked:
-      b = b & ( (~(1 << i)) & 0xffffffff )
-
-  random_sparse_msgs.extend([ req( a, b ), resp( a * b ) ])
-
-#-------------------------------------------------------------------------
-# Test Case Table
-#-------------------------------------------------------------------------
-
-test_case_table = mk_test_case_table([
-  (                      "msgs                 src_delay sink_delay"),
-  [ "small_pos_pos",     small_pos_pos_msgs,   0,        0          ],
-  [ "small_neg_pos",     small_neg_pos_msgs,   0,        0          ],
-  [ "small_pos_neg",     small_pos_neg_msgs,   0,        0          ],
-  [ "small_neg_neg",     small_neg_neg_msgs,   0,        0          ],
-  [ "large_pos_pos",     large_pos_pos_msgs,   0,        0          ],
-  [ "large_neg_neg",     large_neg_neg_msgs,   0,        0          ],
-  [ "zeros",             zeros_msgs,           0,        0          ],
-  [ "random_small",      random_small_msgs,    0,        0          ],
-  [ "random_large",      random_large_msgs,    0,        0          ],
-  [ "random_lomask",     random_lomask_msgs,   0,        0          ],
-  [ "random_himask",     random_himask_msgs,   0,        0          ],
-  [ "random_lohimask",   random_lohimask_msgs, 0,        0          ],
-  [ "random_sparse",     random_sparse_msgs,   0,        0          ],
-  [ "random_small_3x14", random_small_msgs,    3,        14         ],
-  [ "random_large_3x14", random_large_msgs,    3,        14         ],
+@pytest.mark.parametrize('n, d, a, b', [
+	(3, 0, 3, 3), # overflow check
+	(2, 1, 0.5, -0.5),
+	(6, 3, -4, -0.125), #100.000 * 111.111 = 000.100
+	(6, 3, 3.875, -0.125), #-0.375
 ])
+def test_edge(n, d, a, b):
+	print(a, b);
+	a = Fixed(a, 1, n, d)
+	b = Fixed(b, 1, n, d)
 
-#-------------------------------------------------------------------------
-# TestHarness
-#-------------------------------------------------------------------------
+	print("%s * %s = %s", a.bin(dot=1), b.bin(dot=1), (a*b).resize(None, n, d).bin(dot=1));
+	print("%s * %s = %s", a.get(), b.get(), (a*b).resize(None, n, d).get());
 
-@pytest.mark.parametrize( **test_case_table )
-def test( test_params, cmdline_opts ):
+	model = create_model(n, d, dump_vcd='edge')
 
-  th = TestHarness( fpmult(32, 0) )
+	model.set_param("top.src.construct",
+		msgs=[mk_msg(n, a.get(), b.get())],
+		initial_delay=0,
+		interval_delay=0
+	)
 
-  th.set_param("top.src.construct",
-    msgs=test_params.msgs[::2],
-    initial_delay=test_params.src_delay+3,
-    interval_delay=test_params.src_delay )
+	model.set_param("top.sink.construct", 
+		msgs=[(a * b).resize(None, n, d).get()],
+		initial_delay=0,
+		interval_delay=0
+	)
 
-  th.set_param("top.sink.construct",
-    msgs=test_params.msgs[1::2],
-    initial_delay=test_params.sink_delay+3,
-    interval_delay=test_params.sink_delay )
+	run_sim(model)
 
-  run_sim( th, cmdline_opts, duts=['fpmult'] )
+	# out = Fixed(int(eval_until_ready(model, a, b)), s, n, d, raw=True)
 
+	# c = (a * b).resize(s, n, d)
+	# print("%s * %s = %s, got %s" % (a.bin(dot=True), b.bin(dot=True), c.bin(dot=True), out.bin(dot=True)))
+	# assert c.bin() == out.bin()
+		
+@pytest.mark.parametrize('execution_number, sequence_length', [(None, i) for i in [1, 5, 50] for _ in range(20)])
+def test_random(execution_number, sequence_length): # test individual and sequential multiplications to assure stream system works
+	mmn = (16, 64) # minimum and maximum number of bits to use
+	
+	n = randint(mmn[0], mmn[1])
+	d = randint(0, n-1) # decimal bits
 
+	dat = [{'a':rand_fixed(n, d), 'b':rand_fixed(n, d)} for i in range(sequence_length)]
+	solns = [(i['a'] * i['b']).resize(None, n, d) for i in dat]
+
+	model = create_model(n, d, dump_vcd='random_individual')
+
+	t = mk_bitstruct(
+		"In",
+		{
+			'a': mk_bits(n),
+			'b': mk_bits(n)
+		}
+	)
+
+	dat = [mk_msg(n, i['a'].get(), i['b'].get()) for i in dat]
+
+	model.set_param("top.src.construct",
+		msgs=dat,
+		initial_delay=5,
+		interval_delay=5
+	)
+
+	model.set_param("top.sink.construct", 
+		msgs=[c.get() for c in solns],
+		initial_delay=5,
+		interval_delay=5
+	)
+
+	run_sim(model)
