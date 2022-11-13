@@ -5,7 +5,7 @@
 import pytest
 import random
 
-random.seed(0xdeadbeef)
+# random.seed(0xdeadbeef)
 
 from pymtl3 import *
 from pymtl3.passes.PassGroups import DefaultPassGroup
