@@ -18,7 +18,7 @@ module spi_master_ctrl
        
     input  logic        cs_addr_reg,
     input  logic        cs_addr_ifc_val,
-    output logic        cs_reg_en,
+    output logic        cs_addr_reg_en,
        
     //send recv signals
     output logic        send_val,
@@ -32,7 +32,10 @@ module spi_master_ctrl
 
     //peripheral signals
     output logic        cs,
-    output logic        sclk
+    output logic        sclk,
+
+    //sclk counter
+    input logic [5:0] sclk_counter
 );
 
 typedef enum logic [2:0] 
@@ -53,13 +56,13 @@ state_t next_state;
 
 always @(*) begin
     next_state = current_state;
-    case (state_reg)
+    case (current_state)
         STATE_INIT: if (recv_val == 1) next_state = STATE_START0;
         STATE_START0: next_state = STATE_START1;
         STATE_START1: next_state = STATE_SCLK_HIGH;
         STATE_SCLK_HIGH: next_state = STATE_SCLK_LOW;
         STATE_SCLK_LOW: 
-            if(sclk_counter == 0) begin
+            if(sclk_counter == 6'h20) begin
                 next_state = STATE_CS_LOW_WAIT;
             end
             else begin
@@ -81,7 +84,7 @@ always @(*) begin
 
 end
 
-task control_signals
+task control_signal
 (
     input cs_packet_size_reg_en,
     input cs_cs_addr_reg_en,
@@ -104,8 +107,8 @@ begin
     sclk_posedge       = cs_sclk_posedge;
     sclk               = cs_sclk;
     cs                 = cs_cs;
-    counter_increment  = cs_counter_increment;
-    counter_reset      = cs_counter_reset;
+    count_increment  = cs_counter_increment;
+    count_reset      = cs_counter_reset;
 end
 endtask
 
@@ -114,18 +117,18 @@ assign clk_cnt_not_done = (count != packet_size_ifc_val);
 
 
 always @(*) begin
-    case(state_reg)
+    case(current_state)
 
-//                             packet size           addr              send   recv   sclk     sclk                           clk  clk
-//                             reg en                reg en            val    rdy    negedge  posedge             sclk  cs   inc  res
+//                                         packet size           addr              send   recv   sclk     sclk                           clk  clk
+//                                         reg en                reg en            val    rdy    negedge  posedge             sclk  cs   inc  res
 // need to add more signals
-        STATE_INIT:        cs( packet_size_ifc_val,  cs_addr_ifc_val,  0,     1,     0,       0,                  0,    1,   0,   0    );
-        STATE_START0:      cs( 0,                    0,                0,     0,     0,       0,                  0,    0,   0,   1    );
-        STATE_START1:      cs( 0,                    0,                0,     0,     0,       1,                  0,    0,   0,   0    );
-        STATE_SCLK_HIGH:   cs( 0,                    0,                0,     0,     1,       0,                  1,    0,   1,   0    );
-        STATE_SCLK_LOW:    cs( 0,                    0,                0,     0,     0,       clk_cnt_not_done,   0,    0,   0,   0    );
-        STATE_CS_LOW_WAIT: cs( 0,                    0,                0,     0,     0,       0,                  0,    0,   0,   0    );
-        STATE_DONE:        cs( 0,                    0,                1,     1,     0,       0,                  0,    1,   0,   0    );
+        STATE_INIT:        control_signal( packet_size_ifc_val,  cs_addr_ifc_val,  0,     1,     0,       0,                  0,    1,   0,   0    );
+        STATE_START0:      control_signal( 0,                    0,                0,     0,     0,       0,                  0,    0,   0,   1    );
+        STATE_START1:      control_signal( 0,                    0,                0,     0,     0,       1,                  0,    0,   0,   0    );
+        STATE_SCLK_HIGH:   control_signal( 0,                    0,                0,     0,     1,       0,                  1,    0,   1,   0    );
+        STATE_SCLK_LOW:    control_signal( 0,                    0,                0,     0,     0,       clk_cnt_not_done,   0,    0,   0,   0    );
+        STATE_CS_LOW_WAIT: control_signal( 0,                    0,                0,     0,     0,       0,                  0,    0,   0,   0    );
+        STATE_DONE:        control_signal( 0,                    0,                1,     1,     0,       0,                  0,    1,   0,   0    );
     endcase
 end
 endmodule
