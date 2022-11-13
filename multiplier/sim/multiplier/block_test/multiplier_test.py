@@ -124,14 +124,6 @@ def test_random(execution_number, sequence_length, n, d): # test individual and 
 
 	model = create_model(n, d)
 
-	t = mk_bitstruct(
-		"In",
-		{
-			'a': mk_bits(n),
-			'b': mk_bits(n)
-		}
-	)
-
 	dat = [mk_msg(n, i['a'].get(), i['b'].get()) for i in dat]
 
 	model.set_param("top.src.construct",
