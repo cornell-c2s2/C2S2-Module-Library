@@ -71,7 +71,7 @@ module top #(parameter nbits = 34) (
         .load_en(recv_val & recv_rdy_out),
         .shift_en(sclk_negedge),
         .in(1'b0),
-        .load_data(), //fill in
+        .load_data(recv_msg << (nbits - packet_size_ifc_msg)), //fill in
         .out(mosi) 
     );
 
