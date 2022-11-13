@@ -44,7 +44,7 @@ jobs:
         pip install --upgrade pip
         pip install -r requirements.txt
     - name: Run tests
-      timeout-minutes: 5
+      timeout-minutes: 15
       run: |
         mkdir -p multiplier/sim/build && cd multiplier/sim/build
         pytest ${{ matrix.test_cmd }} --verbose
