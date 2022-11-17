@@ -18,7 +18,7 @@ from pymtl3 import *
 from pymtl3.stdlib import stream
 from pymtl3.passes.backends.verilog import *
 
-from .IntMulMsgs import IntMulMsgs
+from IntMulMsgs import IntMulMsgs
 
 class FpmultVRTL( VerilogPlaceholder, Component ):
 

@@ -24,6 +24,9 @@ import os
 import sys
 
 sim_dir = os.path.dirname( os.path.abspath( __file__ ) )
+print(sim_dir)
+print(os.path.sep)
+print(os.path.dirname(sim_dir))
 while sim_dir:
   if os.path.exists( sim_dir + os.path.sep + "pymtl.ini" ):
     sys.path.insert(0,sim_dir)
@@ -41,12 +44,12 @@ from pymtl3.passes.backends.verilog import VerilogPlaceholderPass
 # from lab1_imul.IntMulFixedLatCL  import IntMulFixedLatCL
 # from lab1_imul.IntMulVarLatCL    import IntMulVarLatCL
 # from lab1_imul.IntMulNstageCL    import IntMulNstageCL
-from multiplier.fpmultRTL   import fpmultVRTL
+from fpmultRTL   import FpmultVRTL
 
-from multiplier.fpmultRTL.multiplier_test import TestHarness
-from multiplier.fpmultRTL.multiplier_test import random_small_msgs, random_large_msgs
-from multiplier.fpmultRTL.multiplier_test import random_lomask_msgs, random_himask_msgs
-from multiplier.fpmultRTL.multiplier_test import random_lohimask_msgs, random_sparse_msgs
+from block_test.multiplier_test import TestHarness
+from block_test.multiplier_test import random_small_msgs, random_large_msgs
+from block_test.multiplier_test import random_lomask_msgs, random_himask_msgs
+from block_test.multiplier_test import random_lohimask_msgs, random_sparse_msgs
 
 #-------------------------------------------------------------------------
 # Command line processing
@@ -76,7 +79,6 @@ def parse_cmdline():
       "rtl-scycle","rtl-fixed","rtl-var","rtl-nstage",
     ] )
 
-  p.add_argument( "--nstages", default=2 )
 
   p.add_argument( "--input", default="small",
     choices=["small","large","lomask","himask","lohimask","sparse"] )
@@ -128,9 +130,7 @@ def main():
 
   # Parameters
 
-  params = {}
-  if opts.impl.endswith("nstage"):
-    params = { "nstages" : int(opts.nstages) }
+  params = {"n":32,"d":0}
 
   # Create test harness (we can reuse the harness from unit testing)
 
@@ -141,8 +141,7 @@ def main():
 
   # Create VCD filename
 
-  unique_name = f"imul-rtl-{int(opts.nstages)}stage-{opts.input}" if opts.impl.endswith("nstage") \
-                else f"imul-{opts.impl}-{opts.input}"
+
 
   cmdline_opts = {
     'dump_vcd': f"{unique_name}" if opts.dump_vcd else '',
@@ -152,7 +151,7 @@ def main():
 
   # Configure the test harness component
 
-  config_model_with_cmdline_opts( th, cmdline_opts, duts=['imul'] )
+  config_model_with_cmdline_opts( th, cmdline_opts, duts=['fpmult'] )
 
   # Apply necessary passes
 

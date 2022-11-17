@@ -10,8 +10,8 @@ random.seed(0xdeadbeef)
 from pymtl3 import *
 from pymtl3.stdlib import stream
 from pymtl3.stdlib.test_utils import mk_test_case_table, run_sim
-from multiplier.fpmultRTL    import fpmult
-from multiplier.IntMulMsgs    import IntMulMsgs
+from fpmultRTL    import FpmultVRTL
+from IntMulMsgs    import IntMulMsgs
 
 #-------------------------------------------------------------------------
 # TestHarness
@@ -251,7 +251,7 @@ test_case_table = mk_test_case_table([
 @pytest.mark.parametrize( **test_case_table )
 def test( test_params, cmdline_opts ):
 
-  th = TestHarness( fpmult(32, 0) )
+  th = TestHarness( FpmultVRTL(32, 0) )
 
   th.set_param("top.src.construct",
     msgs=test_params.msgs[::2],
