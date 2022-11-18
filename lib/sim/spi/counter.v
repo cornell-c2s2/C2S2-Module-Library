@@ -1,6 +1,6 @@
 module counter #(parameter bitwidth = 32) 
 (
-    input logic in,
+   // input logic in,
     input logic clk, 
     input logic rst, 
     input logic en,

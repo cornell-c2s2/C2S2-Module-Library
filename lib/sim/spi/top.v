@@ -4,36 +4,64 @@
 
 `include "spi_master.v"
 `include "shiftreg.v"
+`include "counter.v"
 
-module top (
+module top #(parameter nbits = 34) (
     // SPECIFY I/O HERE
     input reset,
     input clk,
 
-    input logic packet_size_ifc, // bit width?
-    input logic cs_addr_ifc,  // might exclude if we only use one cs
+    input logic packet_size_ifc_val, 
+    output logic packet_size_ifc_rdy,
+    input logic [$clog2(nbits)-1:0] packet_size_ifc_msg,    
+
     output logic send_val,
     input logic send_rdy,
     output logic recv_rdy,
     input logic recv_val,
-    input recv_msg, // bit width?
-    output send_msg,
+    input [nbits-1:0] recv_msg, // since this is serial, why not 1 bit?
+    output [nbits-1:0] send_msg, // same here
+
     output cs0,
     output sclk,
     output mosi,
     input miso
 );
     
-    wire recv_rdy_out;
+    logic recv_rdy_out;
     assign recv_rdy = recv_rdy_out;
 
-    wire sclk_negedge;
-    wire sclk_posedge;
+    logic sclk_negedge;
+    logic sclk_posedge;
+
+    logic count_en;
+    logic count_rst;
+    logic count
 
     spi_master_ctrl fsm (
         //MAKE CONNECTIONS HERE
+        .packet_size_reg(),
+        .packet_size_ifc_val(),
+        .packet_size_reg_en(),
+        // let's omit cs for now
+        .send_val(),
+        .send_rdy(),
         .recv_rdy(rcv_rdy_out),
-        .sclk_negedge(sclk_negedge)
+        .recv_val(),
+        .sclk_posedge(sclk_posedge),
+        .sclk_negedge(sclk_negedge),
+        .count_increment(count_en),
+        .count_reset(count_rst)
+        .count(count),
+        .cs(),
+        .sclk()
+    );
+
+    counter count (
+        .rst(count_rst),
+        .clk(clk),
+        .en(count_en),
+        .out(count)
     );
 
     shiftreg shregout (
@@ -53,5 +81,5 @@ module top (
         .shift_en(sclk_posedge),
         .in(miso),
         .load_data(1'b0),
-        .out(send_msg)
+        .out(send_msg) // not sure if right width
     );
