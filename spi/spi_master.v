@@ -4,7 +4,8 @@
 `include "shiftreg.v"
 `include "counter.v"
 
-module spi_master_ctrl
+module spi_master_ctrl 
+#(parameter nbits = 34) // nbits is the size of the msg we want to send from chip -> follower
 (
     //counter signals
     input  logic [31:0] count,
@@ -12,13 +13,14 @@ module spi_master_ctrl
     output logic        count_reset,
 
     //reg signals
-    input  logic        packet_size_reg,
+    input  logic [$clog2(nbits)-1:0]       packet_size_reg, // value stored in reg ?
     input  logic        packet_size_ifc_val,
     output logic        packet_size_reg_en,
+    output logic        packet_size_ifc_rdy,
        
     input  logic        cs_addr_reg,
     input  logic        cs_addr_ifc_val,
-    output logic        cs_addr_reg_en,
+    output logic        cs_addr_reg_en, // what is this signal?
        
     //send recv signals
     output logic        send_val,
