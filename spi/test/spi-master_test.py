@@ -7,7 +7,9 @@ Unit test for SPIMasterRTL.
 
 from pymtl3 import *
 from pymtl3.stdlib.test_utils import config_model_with_cmdline_opts
+#import sys
 
+#sys.path.insert(0, '../')
 from ..spi_master_rtl import SPIMasterValRdyRTL
 
 
