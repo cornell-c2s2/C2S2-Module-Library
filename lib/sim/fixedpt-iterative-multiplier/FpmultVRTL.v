@@ -87,7 +87,7 @@ module FpmultVRTL
       cinI.counter <= ctI.counter;
     end
 
-    if (send_rdy & send_val) begin // reciever is ready for input
+    if (~recv_rdy & send_rdy & send_val) begin // reciever is ready for input
       recv_rdy <= 1;
     end
 
