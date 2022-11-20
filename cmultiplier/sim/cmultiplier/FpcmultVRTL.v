@@ -86,7 +86,7 @@ module FpcmultVRTL
 			send_val <= 1;
 		end
 
-		if (send_val & send_rdy) begin
+		if (~recv_rdy & send_val & send_rdy) begin
 			recv_rdy <= 1;
 		end
 	end
