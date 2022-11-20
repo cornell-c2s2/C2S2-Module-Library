@@ -2,7 +2,7 @@
 # @Author: UnsignedByte
 # @Date:   2022-11-12 18:34:50
 # @Last Modified by:   UnsignedByte
-# @Last Modified time: 2022-11-19 11:44:08
+# @Last Modified time: 2022-11-19 19:41:29
 
 #=========================================================================
 # IntMulFixedLatRTL_test
@@ -35,9 +35,8 @@ def cmul(n, d, a, b):
 
 	return CFixed.cast( (
 		ac-bc,
-			(c - ac).resize(None, n, d)
-			- bc)
-		).resize(n, d)
+		c - ac - bc
+	) ).resize(n, d)
 
 # Merge a and b into a larger number
 def mk_msg(n, a, b):
@@ -126,8 +125,8 @@ def test_edge(n, d, a, b):
 
 @pytest.mark.parametrize('execution_number, sequence_length, n, d', 
 	# Runs tests on smaller number sizes
-	mk_params(50, [1, 25], (2, 8), (0, 8))
-	+
+	# mk_params(50, [1, 2], (2, 8), (0, 8))
+	# +
 	# Runs tests on 20 randomly sized fixed point numbers, inputting 1, 5, and 50 numbers to the stream
 	mk_params(20, [1, 10, 50, 100], (16, 64), (0, 64))
 	+
@@ -171,5 +170,5 @@ def test_random(execution_number, sequence_length, n, d): # test individual and 
 	run_sim(model, cmdline_opts={
 		'dump_textwave':False,
 		'dump_vcd':f'rand_{execution_number}_{sequence_length}_{n}_{d}',
-		'max_cycles':(30+(n+2)*len(dat)) # makes sure the time taken grows linearly with respect to n
+		'max_cycles':(3000+(n+4)*len(dat)) # makes sure the time taken grows linearly with respect to n
 	})
