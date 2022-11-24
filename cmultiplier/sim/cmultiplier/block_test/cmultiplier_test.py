@@ -2,7 +2,7 @@
 # @Author: UnsignedByte
 # @Date:   2022-11-12 18:34:50
 # @Last Modified by:   UnsignedByte
-# @Last Modified time: 2022-11-19 21:38:31
+# @Last Modified time: 2022-11-24 13:33:01
 
 #=========================================================================
 # IntMulFixedLatRTL_test
@@ -170,5 +170,5 @@ def test_random(execution_number, sequence_length, n, d): # test individual and 
 	run_sim(model, cmdline_opts={
 		'dump_textwave':False,
 		'dump_vcd':f'rand_{execution_number}_{sequence_length}_{n}_{d}',
-		'max_cycles':(3000+(n+4)*len(dat)) # makes sure the time taken grows linearly with respect to n
+		'max_cycles':(30+(n+4)*len(dat)) # makes sure the time taken grows linearly with respect to n
 	})
