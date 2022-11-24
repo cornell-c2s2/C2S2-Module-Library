@@ -66,6 +66,12 @@ module FpcmultVRTL
 	assign cc = ab - arbr - acbc;
 
 	always @(posedge clk) begin
+    if (reset) begin
+      recv_rdy <= 1;
+      send_val <= 0;
+      sab_rdy <= 0;
+    end
+
 		if (recv_val & recv_rdy) begin 
 			sab_rdy <= 1;
 			a <= ar + ac;
