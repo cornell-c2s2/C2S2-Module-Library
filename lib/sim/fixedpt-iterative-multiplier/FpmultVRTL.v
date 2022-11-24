@@ -59,10 +59,6 @@ module FpmultVRTL
   reg rdy;
   stateI #(.n(n), .d(d)) cinI ();
   stateI #(.n(n), .d(d)) ctI ();
-  
-  initial begin
-    recv_rdy = 1;
-  end
 
   fpmulit_inner #(.n(n), .d(d), .sign(sign)) mult (
     .a(ha),
@@ -73,6 +69,11 @@ module FpmultVRTL
   );
 
   always @(posedge clk) begin
+    if (reset) begin
+      recv_rdy <= 1;
+      send_val <= 0;
+    end
+
     if (recv_val & recv_rdy) begin // we are ready to recieve data
       ha <= {{d{(sign != 0) & a[n-1]}}, a};
       hb <= b;
