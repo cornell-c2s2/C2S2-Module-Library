@@ -7,7 +7,6 @@ interface stateI #( parameter n, parameter d ) ();
 
   modport in ( input acc, input counter );
   modport out ( output acc, output counter );
-  modport io ( inout acc, inout counter );
 endinterface
 
 module fpmulit_inner # (
@@ -42,18 +41,23 @@ endmodule
 
 module FpmultVRTL
 # (
-  parameter n = 32, // bit width
-  parameter d = 16, // number of decimal bits
-  parameter sign = 1 // 1 if signed, 0 otherwise.
-) (clk, reset, recv_val, recv_rdy, send_val, send_rdy, a, b, c);
+	parameter n = 32, // bit width
+	parameter d = 16, // number of decimal bits
+	parameter sign = 1 // 1 if signed, 0 otherwise.
+) (
+	input logic clk,
+	input logic reset,
+	input logic recv_val,
+	output logic recv_rdy,
+	output logic send_val,
+	input logic send_rdy,
+	input logic [n-1:0] a,
+	input logic [n-1:0] b,
+	output logic[n-1:0] c
+);
   // performs the operation c = a*b
   // Equivalent to taking the integer representations of both numbers,
   // multiplying, and then shifting right
-  input logic clk, reset;
-  input logic recv_val, send_rdy;
-  input logic [n-1:0] a, b;
-  output logic [n-1:0] c;
-  output logic send_val, recv_rdy;
   reg [n-1:0] hb, hc;
   reg [n+d-1:0] ha;
   reg rdy;
