@@ -3,10 +3,11 @@
 
 interface stateI #( parameter n, parameter d ) ();
   logic [n+d-1:0] acc; // this needs to be n+d bits because the decimal portion of the multiplication may overflow
-  logic [$clog2(n+1)-1:0] counter;
+  logic [$clog2(n)-1:0] counter;
 
   modport in ( input acc, input counter );
   modport out ( output acc, output counter );
+  modport io ( inout acc, inout counter );
 endinterface
 
 module fpmulit_inner # (
@@ -26,14 +27,14 @@ module fpmulit_inner # (
     tmp = 0;
     if (b[in.counter]) begin
       tmp = a << in.counter;
-      if (sign & in.counter == n-1) begin// sign bit (if multiplier is signed)
+      if (sign & in.counter == ($clog2(n))'(n-1)) begin// sign bit (if multiplier is signed)
         tt = { {(n-d){a[n+d-1]}}, a};
         tt = ((tt << n) - tt) << (n-1);
         tmp = tt[n+d-1:0];
       end
     end
     tmp = tmp + in.acc;     
-    rdy = in.counter == n-1;
+    rdy = in.counter == ($clog2(n))'(n-1);
     out.acc = tmp;
     out.counter = in.counter + 1;
   end
@@ -41,23 +42,18 @@ endmodule
 
 module FpmultVRTL
 # (
-	parameter n = 32, // bit width
-	parameter d = 16, // number of decimal bits
-	parameter sign = 1 // 1 if signed, 0 otherwise.
-) (
-	input logic clk,
-	input logic reset,
-	input logic recv_val,
-	output logic recv_rdy,
-	output logic send_val,
-	input logic send_rdy,
-	input logic [n-1:0] a,
-	input logic [n-1:0] b,
-	output logic[n-1:0] c
-);
+  parameter n = 32, // bit width
+  parameter d = 16, // number of decimal bits
+  parameter sign = 1 // 1 if signed, 0 otherwise.
+) (clk, reset, recv_val, recv_rdy, send_val, send_rdy, a, b, c);
   // performs the operation c = a*b
   // Equivalent to taking the integer representations of both numbers,
   // multiplying, and then shifting right
+  input logic clk, reset;
+  input logic recv_val, send_rdy;
+  input logic [n-1:0] a, b;
+  output logic [n-1:0] c;
+  output logic send_val, recv_rdy;
   reg [n-1:0] hb, hc;
   reg [n+d-1:0] ha;
   reg rdy;
