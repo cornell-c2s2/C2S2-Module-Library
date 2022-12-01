@@ -30,7 +30,7 @@ void VDecoder::eval_step() {
             Verilated::debug(1);
             __Vchange = _change_request(vlSymsp);
             Verilated::debug(__Vsaved_debug);
-            VL_FATAL_MT("DecoderVRTL.v", 45, "",
+            VL_FATAL_MT("DecoderVRTL.v", 43, "",
                 "Verilated model didn't converge\n"
                 "- See DIDNOTCONVERGE in the Verilator manual");
         } else {
@@ -55,7 +55,7 @@ void VDecoder::_eval_initial_loop(VDecoder__Syms* __restrict vlSymsp) {
             Verilated::debug(1);
             __Vchange = _change_request(vlSymsp);
             Verilated::debug(__Vsaved_debug);
-            VL_FATAL_MT("DecoderVRTL.v", 45, "",
+            VL_FATAL_MT("DecoderVRTL.v", 43, "",
                 "Verilated model didn't DC converge\n"
                 "- See DIDNOTCONVERGE in the Verilator manual");
         } else {
