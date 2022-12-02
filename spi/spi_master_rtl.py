@@ -18,6 +18,7 @@ from os import path
 from pymtl3 import *
 from pymtl3.passes.backends.verilog import *
 from pymtl3.stdlib.stream.ifcs import RecvIfcRTL, SendIfcRTL
+from .interfaces.SPIIfc import SPIMasterIfc
 #from ..interfaces import PushInIfc, PullOutIfc
 
 class SPIMasterValRdyVRTL( VerilogPlaceholder, Component ):
@@ -60,9 +61,9 @@ class SPIMasterValRdyVRTL( VerilogPlaceholder, Component ):
       s.packet_size_ifc.rdy : 'packet_size_ifc_rdy',
       s.packet_size_ifc.msg : 'packet_size_ifc_msg',
 
-      s.cs_addr_ifc : 'cs_addr_ifc_val',
-      s.cs_addr_ifc : 'cs_addr_ifc_rdy',
-      s.cs_addr_ifc : 'cs_addr_ifc_msg',
+      s.cs_addr_ifc.val : 'cs_addr_ifc_val',
+      s.cs_addr_ifc.rdy : 'cs_addr_ifc_rdy',
+      s.cs_addr_ifc.msg : 'cs_addr_ifc_msg',
 
     })
 

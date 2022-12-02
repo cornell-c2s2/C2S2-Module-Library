@@ -13,14 +13,15 @@ module spi_master_ctrl
     output logic        count_reset,
 
     //reg signals
-    input  logic [$clog2(nbits)-1:0]       packet_size_reg, // value stored in reg ?
+    input  logic [31:0] packet_size_reg, // sub in for msg
     input  logic        packet_size_ifc_val,
     output logic        packet_size_reg_en,
     output logic        packet_size_ifc_rdy,
        
-    input  logic        cs_addr_reg,
+    input  logic [31:0] cs_addr_reg, //sub in for msg
     input  logic        cs_addr_ifc_val,
     output logic        cs_addr_reg_en, // what is this signal?
+    output logic        cs_addr_ifc_rdy,
        
     //send recv signals
     output logic        send_val,
