@@ -58,6 +58,8 @@ module top #(parameter nbits = 34) (
         .sclk(sclk)
     );
 
+    // NEED TO PUT VALRDY BLOCK FOR PACKET SIZE
+
     counter count (
         .rst(count_rst),
         .clk(clk),
