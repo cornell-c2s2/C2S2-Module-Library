@@ -19,7 +19,8 @@ from pymtl3 import *
 from pymtl3.passes.backends.verilog import *
 from pymtl3.stdlib.stream.ifcs import RecvIfcRTL, SendIfcRTL
 from .interfaces.SPIIfc import SPIMasterIfc
-#from ..interfaces import PushInIfc, PullOutIfc
+from .interfaces.PushIfc import PushInIfc
+from .interfaces.PullIfc import PullOutIfc
 
 class SPIMasterValRdyVRTL( VerilogPlaceholder, Component ):
 
@@ -43,6 +44,15 @@ class SPIMasterValRdyVRTL( VerilogPlaceholder, Component ):
     s.packet_size_ifc = RecvIfcRTL( s.logBitsN ) # size of spi packet (up to nbits)
     s.cs_addr_ifc = RecvIfcRTL( mk_bits(clog2(s.ncs) if s.ncs > 1 else 1) )
 
+    # s.packet_size_ifc.msg = InPort()
+    # s.packet_size_ifc.rdy = OutPort()
+    # s.packet_size_ifc.val = InPort()
+
+    # s.cs_addr_ifc.msg = InPort()
+    # s.cs_addr_ifc.rdy = OutPort()
+    # s.cs_addr_ifc.val = InPort()
+
+
     s.set_metadata( VerilogPlaceholderPass.port_map, {
       s.spi_ifc.cs    : 'cs',
       s.spi_ifc.sclk  : 'sclk',
@@ -64,8 +74,8 @@ class SPIMasterValRdyVRTL( VerilogPlaceholder, Component ):
       s.cs_addr_ifc.val : 'cs_addr_ifc_val',
       s.cs_addr_ifc.rdy : 'cs_addr_ifc_rdy',
       s.cs_addr_ifc.msg : 'cs_addr_ifc_msg',
-
     })
+    
 
 # Import the appropriate version based on the rtl_language variable
 
