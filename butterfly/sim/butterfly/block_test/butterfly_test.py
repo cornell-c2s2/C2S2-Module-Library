@@ -2,7 +2,7 @@
 # @Author: UnsignedByte
 # @Date:   2022-11-24 13:05:57
 # @Last Modified by:   UnsignedByte
-# @Last Modified time: 2022-12-03 18:54:57
+# @Last Modified time: 2022-12-03 19:11:19
 
 import pytest
 import random
@@ -171,7 +171,7 @@ def test_random(execution_number, sequence_length, n, d): # test individual and 
 
 	run_sim(model, cmdline_opts={
 		'dump_textwave':False,
-		'dump_vcd':f'rand_{execution_number}_{sequence_length}_{n}_{d}_0',
+		'dump_vcd':f'rand_{execution_number}_{sequence_length}_{n}_{d}_1',
 		'max_cycles':(30+(n+5)*len(dat)) # makes sure the time taken grows linearly with respect to n
 	})
 
