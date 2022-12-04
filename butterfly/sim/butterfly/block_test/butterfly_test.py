@@ -2,7 +2,7 @@
 # @Author: UnsignedByte
 # @Date:   2022-11-24 13:05:57
 # @Last Modified by:   UnsignedByte
-# @Last Modified time: 2022-12-03 19:11:19
+# @Last Modified time: 2022-12-03 19:48:11
 
 import pytest
 import random
@@ -220,5 +220,5 @@ def test_without_mult(execution_number, sequence_length, n, d): # test modules w
 	run_sim(model, cmdline_opts={
 		'dump_textwave':False,
 		'dump_vcd':f'rand_{execution_number}_{sequence_length}_{n}_{d}_0',
-		'max_cycles':(30+5*len(dat)) # makes sure the time taken grows linearly with respect to n
+		'max_cycles':(30+6*len(dat)) # makes sure the time taken grows constantly
 	})
