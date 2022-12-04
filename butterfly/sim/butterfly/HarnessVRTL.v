@@ -3,7 +3,8 @@
 module HarnessVRTL
 #(
 	parameter n = 32,
-	parameter d = 16
+	parameter d = 16,
+	parameter mult = 1
 )
 (
 	input logic clk,
@@ -18,7 +19,7 @@ module HarnessVRTL
 	output logic [4*n-1:0] send_msg
 );
 
-	ButterflyVRTL #(.n(n), .d(d)) btfly (
+	ButterflyVRTL #(.n(n), .d(d), .mult(mult)) btfly (
 		.clk(clk),
 		.reset(reset),
 

@@ -12,7 +12,7 @@ class HarnessVRTL( VerilogPlaceholder, Component ):
 
   # Constructor
 
-  def construct( s, n=32, d=16 ):
+  def construct( s, n=32, d=16, mult=1 ):
     # Interface
 
     s.recv = stream.ifcs.RecvIfcRTL( mk_bits(6*n) )

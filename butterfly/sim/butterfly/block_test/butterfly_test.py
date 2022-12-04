@@ -2,7 +2,7 @@
 # @Author: UnsignedByte
 # @Date:   2022-11-24 13:05:57
 # @Last Modified by:   UnsignedByte
-# @Last Modified time: 2022-11-24 13:32:03
+# @Last Modified time: 2022-12-03 18:54:57
 
 import pytest
 import random
@@ -35,7 +35,10 @@ def cmul(n, d, a, b):
 	) ).resize(n, d)
 
 def butterfly(n, d, a, b, w):
-	t = cmul(n, d, b, w);
+	if w is not None:
+		t = cmul(n, d, b, w);
+	else:
+		t = b;
 	return ((a + t).resize(n, d), (a - t).resize(n, d));
 
 def mk_msg(n, a, b, w):
@@ -78,8 +81,8 @@ def rand_cfixed(n, d):
 	return CFixed((randint(0, (1<<n)-1), randint(0, (1<<n)-1)), n, d, raw=True)
 
 # Initialize a simulatable model
-def create_model(n, d):
-	model = HarnessVRTL(n, d)
+def create_model(n, d, mult=1):
+	model = HarnessVRTL(n, d, mult)
 
 	return Harness(model, n)
 
@@ -168,6 +171,54 @@ def test_random(execution_number, sequence_length, n, d): # test individual and 
 
 	run_sim(model, cmdline_opts={
 		'dump_textwave':False,
-		'dump_vcd':f'rand_{execution_number}_{sequence_length}_{n}_{d}',
+		'dump_vcd':f'rand_{execution_number}_{sequence_length}_{n}_{d}_0',
 		'max_cycles':(30+(n+5)*len(dat)) # makes sure the time taken grows linearly with respect to n
+	})
+
+@pytest.mark.parametrize('execution_number, sequence_length, n, d', 
+	# Runs tests on smaller number sizes
+	mk_params(50, [1, 50], (2, 8), (0, 8))
+	+
+	# Runs tests on 20 randomly sized fixed point numbers, inputting 1, 5, and 50 numbers to the stream
+	mk_params(20, [1, 10, 50, 100], (16, 64), (0, 64))
+	+
+	# Extensively tests numbers with certain important bit sizes.
+	sum(
+		[mk_params(1, [1, 100, 1000], n, d)
+		for (n, d) in [
+			(8, 4),
+			(24, 8),
+			(32, 24),
+			(32, 16),
+			(64, 32),
+		]], []
+	)
+)
+def test_without_mult(execution_number, sequence_length, n, d): # test modules without multiplication
+	n = randint(n[0], n[1])
+	d = randint(d[0], min(n-1, d[1])) # decimal bits
+
+	dat = [(rand_cfixed(n, d), rand_cfixed(n, d), None) for i in range(sequence_length)]
+	solns = [butterfly(n, d, i[0], i[1], i[2]) for i in dat]
+
+	model = create_model(n, d, 0)
+
+	dat = [mk_msg(n, i[0].get(), i[1].get(), (0, 0)) for i in dat]
+
+	model.set_param("top.src.construct",
+		msgs=dat,
+		initial_delay=5,
+		interval_delay=5
+	)
+
+	model.set_param("top.sink.construct", 
+		msgs=[mk_ret(n, c.get(), d.get()) for (c, d) in solns],
+		initial_delay=5,
+		interval_delay=5
+	)
+
+	run_sim(model, cmdline_opts={
+		'dump_textwave':False,
+		'dump_vcd':f'rand_{execution_number}_{sequence_length}_{n}_{d}_0',
+		'max_cycles':(30+5*len(dat)) # makes sure the time taken grows linearly with respect to n
 	})

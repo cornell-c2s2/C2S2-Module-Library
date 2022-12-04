@@ -4,7 +4,8 @@
 module ButterflyVRTL
 #(
 	parameter n = 32,
-	parameter d = 16
+	parameter d = 16,
+	parameter mult = 1 // 1 if we include the multiplication of w (saves area as w is usually 1)
 ) (clk, reset, recv_val, recv_rdy, send_val, send_rdy, ar, ac, br, bc, wr, wc, cr, cc, dr, dc);
 	/* performs the butterfly operation, equivalent to doing
 		| 1  w |   | a |   | c |
@@ -20,20 +21,38 @@ module ButterflyVRTL
 	logic mul_rdy;
 	logic [n-1:0] tr, tc;
 
-	FpcmultVRTL #(.n(n), .d(d)) mul ( // ar * br
-		.clk(clk),
-		.reset(reset),
-		.ar(br),
-		.ac(bc),
-		.br(wr),
-		.bc(wc),
-		.cr(tr),
-		.cc(tc),
-		.recv_val(recv_val),
-		.recv_rdy(),
-		.send_val(mul_rdy),
-		.send_rdy(1'b1)
-	);
+	if ( mult == 1 ) begin
+		FpcmultVRTL #(.n(n), .d(d)) mul ( // ar * br
+			.clk(clk),
+			.reset(reset),
+			.ar(br),
+			.ac(bc),
+			.br(wr),
+			.bc(wc),
+			.cr(tr),
+			.cc(tc),
+			.recv_val(recv_val),
+			.recv_rdy(),
+			.send_val(mul_rdy),
+			.send_rdy(1'b1)
+		);
+	end else begin
+		always @(posedge clk) begin
+			if (reset) begin
+				mul_rdy <= 0;
+			end
+
+			if (~mul_rdy & recv_val) begin
+				mul_rdy <= 1;
+				tr <= br;
+				tc <= bc;
+			end
+
+			if (mul_rdy) begin
+				mul_rdy <= 0;
+			end
+		end
+	end
 
 	always @(posedge clk) begin
 		if (reset) begin
