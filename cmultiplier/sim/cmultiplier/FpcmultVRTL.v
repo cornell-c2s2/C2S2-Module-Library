@@ -74,9 +74,7 @@ module FpcmultVRTL
 		  recv_rdy <= 1;
 		  send_val <= 0;
 		  sab_rdy <= 0;
-		end
-
-		if (recv_val & recv_rdy) begin 
+		end else if (recv_val & recv_rdy) begin 
 			sab_rdy <= 1;
 			a <= ar + ac;
 			b <= br + bc;
@@ -86,20 +84,16 @@ module FpcmultVRTL
 			brt <= br;
 			recv_rdy <= 0;
 			send_val <= 0;
-		end
-
-		if (sab_rdy) begin
+		end else if (sab_rdy) begin
 			sab_rdy <= 0;
-		end
-
-		if (~sab_rdy & ~send_val & arbr_rdy & acbc_rdy & ab_rdy) begin // all multipliers are done!
+		end else if (~sab_rdy & ~send_val & arbr_rdy & acbc_rdy & ab_rdy) begin // all multipliers are done!
 			send_val <= 1;
-		end
-
-		if (~recv_rdy & send_val & send_rdy) begin
+		end else if (~recv_rdy & send_val & send_rdy) begin
 			recv_rdy <= 1;
 		end
 	end
+
+
 endmodule
 
 `endif
