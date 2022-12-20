@@ -72,27 +72,19 @@ module FpmultVRTL
     if (reset) begin
       recv_rdy <= 1;
       send_val <= 0;
-    end
-
-    if (recv_val & recv_rdy) begin // we are ready to recieve data
+    end else if (recv_val & recv_rdy) begin // we are ready to recieve data
       ha <= {{d{(sign != 0) & a[n-1]}}, a};
       hb <= b;
       recv_rdy <= 0;
       cinI.acc <= 0;
       cinI.counter <= 0;
       send_val <= 0;
-    end
-
-    if (~recv_rdy) begin
+    end else if (~recv_rdy) begin
       cinI.acc <= ctI.acc;
       cinI.counter <= ctI.counter;
-    end
-
-    if (~recv_rdy & send_rdy & send_val) begin // reciever is ready for input
+    end else if (~recv_rdy & send_rdy & send_val) begin // reciever is ready for input
       recv_rdy <= 1;
-    end
-
-    if (rdy & ~recv_rdy & ~send_val) begin
+    end else if (rdy & ~recv_rdy & ~send_val) begin
       send_val <= 1;
       c <= ctI.acc[n+d-1:d];
     end
