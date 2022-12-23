@@ -58,26 +58,20 @@ module ButterflyVRTL
 		if (reset) begin
 			send_val <= 0;
 			recv_rdy <= 1;
-		end
-
-		if (recv_val & recv_rdy) begin
+		end else if (recv_val & recv_rdy) begin
 			cr <= ar;
 			cc <= ac;
 			dr <= ar;
 			dc <= ac;
 			recv_rdy <= 0;
 			send_val <= 0;
-		end
-
-		if (~send_val & mul_rdy) begin // all multipliers are done!
+		end else if (~send_val & mul_rdy) begin // all multipliers are done!
 			cr <= cr + tr;
 			cc <= cc + tc;
 			dr <= dr - tr;
 			dc <= dc - tc;
 			send_val <= 1;
-		end
-
-		if (~recv_rdy & send_val & send_rdy) begin
+		end else if (~recv_rdy & send_val & send_rdy) begin
 			recv_rdy <= 1;
 		end
 	end
