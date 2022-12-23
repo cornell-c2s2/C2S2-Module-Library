@@ -1,7 +1,7 @@
 `ifndef PROJECT_BUTTERFLY_V
 `define PROJECT_BUTTERFLY_V
-`include "../../../lib/sim/fixedpt-iterative-complex-multiplier/FpcmultVRTL.v"
-`include "../../../lib/sim/nbitregister/RegisterV_Reset.v"
+`include "C2S2-Module-Library/lib/sim/fixedpt-iterative-complex-multiplier/FpcmultVRTL.v"
+`include "C2S2-Module-Library/lib/sim/nbitregister/RegisterV_Reset.v"
 module butterfly #(parameter n = 32, parameter d = 16) (clk, reset, recv_val, recv_rdy, send_val, send_rdy, ar, ac, br, bc, wr, wc, cr, cc, dr, dc)
 	/* performs the butterfly operation, equivalent to doing
 		| 1  w |   | a |   | c |
