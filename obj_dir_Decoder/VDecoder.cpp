@@ -30,7 +30,7 @@ void VDecoder::eval_step() {
             Verilated::debug(1);
             __Vchange = _change_request(vlSymsp);
             Verilated::debug(__Vsaved_debug);
-            VL_FATAL_MT("DecoderVRTL.v", 43, "",
+            VL_FATAL_MT("DecoderVRTL.v", 41, "",
                 "Verilated model didn't converge\n"
                 "- See DIDNOTCONVERGE in the Verilator manual");
         } else {
@@ -55,7 +55,7 @@ void VDecoder::_eval_initial_loop(VDecoder__Syms* __restrict vlSymsp) {
             Verilated::debug(1);
             __Vchange = _change_request(vlSymsp);
             Verilated::debug(__Vsaved_debug);
-            VL_FATAL_MT("DecoderVRTL.v", 43, "",
+            VL_FATAL_MT("DecoderVRTL.v", 41, "",
                 "Verilated model didn't DC converge\n"
                 "- See DIDNOTCONVERGE in the Verilator manual");
         } else {
@@ -68,9 +68,8 @@ VL_INLINE_OPT void VDecoder::_combo__TOP__1(VDecoder__Syms* __restrict vlSymsp) 
     VL_DEBUG_IF(VL_DBG_MSGF("+    VDecoder::_combo__TOP__1\n"); );
     VDecoder* const __restrict vlTOPp VL_ATTR_UNUSED = vlSymsp->TOPp;
     // Body
-    vlTOPp->y = ((IData)(vlTOPp->enable) ? (0xfU & 
-                                            ((IData)(1U) 
-                                             << (IData)(vlTOPp->x)))
+    vlTOPp->y = ((IData)(vlTOPp->enable) ? (3U & ((IData)(1U) 
+                                                  << (IData)(vlTOPp->x)))
                   : 0U);
 }
 
@@ -107,7 +106,7 @@ void VDecoder::_eval_debug_assertions() {
         Verilated::overWidthError("clk");}
     if (VL_UNLIKELY((enable & 0xfeU))) {
         Verilated::overWidthError("enable");}
-    if (VL_UNLIKELY((x & 0xfcU))) {
+    if (VL_UNLIKELY((x & 0xfeU))) {
         Verilated::overWidthError("x");}
 }
 #endif  // VL_DEBUG

@@ -15,7 +15,7 @@ class DecoderVRTL( VerilogPlaceholder, Component ):
     s.set_metadata( VerilogTranslationPass.explicit_module_name, 'Decoder' )
 
     # Interface
-    s.enable = InPort(1)
+    #s.enable = InPort(1)
     s.x = InPort(m)
     s.y = OutPort(n)
 

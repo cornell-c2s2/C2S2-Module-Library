@@ -119,8 +119,8 @@ class Decoder( Component ):
 
     # declare the port interface
     s.enable = InPort( Bits1 )
-    s.x = InPort( Bits2 )
-    s.y = OutPort( Bits4 )
+    s.x = InPort( Bits1 )
+    s.y = OutPort( Bits2 )
 
     # update blocks that converts ffi interface to/from pymtl ports
     
@@ -129,12 +129,12 @@ class Decoder( Component ):
     def isignal_s_DOT_enable():
       s.s_DOT_enable @= s.enable
     
-    s.s_DOT_x = Wire( Bits2 )
+    s.s_DOT_x = Wire( Bits1 )
     @update
     def isignal_s_DOT_x():
       s.s_DOT_x @= s.x
     
-    s.s_DOT_y = Wire( Bits4 )
+    s.s_DOT_y = Wire( Bits2 )
     @update
     def osignal_s_DOT_y():
       s.y @= s.s_DOT_y

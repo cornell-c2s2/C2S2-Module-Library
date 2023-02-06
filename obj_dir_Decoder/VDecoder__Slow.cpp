@@ -53,6 +53,6 @@ void VDecoder::_ctor_var_reset() {
     reset = VL_RAND_RESET_I(1);
     clk = VL_RAND_RESET_I(1);
     enable = VL_RAND_RESET_I(1);
-    x = VL_RAND_RESET_I(2);
-    y = VL_RAND_RESET_I(4);
+    x = VL_RAND_RESET_I(1);
+    y = VL_RAND_RESET_I(2);
 }

@@ -25,8 +25,8 @@ VL_MODULE(VDecoder) {
     VL_IN8(reset,0,0);
     VL_IN8(clk,0,0);
     VL_IN8(enable,0,0);
-    VL_IN8(x,1,0);
-    VL_OUT8(y,3,0);
+    VL_IN8(x,0,0);
+    VL_OUT8(y,1,0);
     
     // INTERNAL VARIABLES
     // Internals; generally not touched by application code
