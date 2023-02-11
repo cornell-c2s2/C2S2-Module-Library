@@ -38,9 +38,3 @@ def test_3to8( cmdline_opts):
     [ 0x00,   0x01], #0x1,      
   ],cmdline_opts)
 
-# def test_enable( cmdline_opts): 
-#   run_test_vector_sim(DecoderVRTL( 3, 8 ),[
-#     ('x      y*'), #enable   
-#     [ 0x00,  0x01], #0x0,     
-#     [ 0x01,  0x02], #0x0,     
-#   ],cmdline_opts)
