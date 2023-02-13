@@ -38,18 +38,16 @@
 
 module DecoderVRTL
     #(  parameter m = 3, 
-        parameter n = 2 ** m
+        parameter n = 1'b1 << m
     )(
         input  logic         enable, 
         input  logic [m-1:0] x, 
         output logic [n-1:0] y
     );
-    //output reg  [n-1:0] y;
-    //define inputs and outputs
 
     ///////////////////////////////// design
 
-    always @(x or enable)begin
+    always @(*)begin
         if (!enable)begin
             y = {n{1'b0}};
         end
