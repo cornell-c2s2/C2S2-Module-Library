@@ -6,17 +6,21 @@ module FpcmultVRTL
 # (
 	parameter n = 32, // bit width
 	parameter d = 16 // number of decimal bits
-) (clk, reset, recv_val, recv_rdy, send_val, send_rdy, ar, ac, br, bc, cr, cc);
+) (
+	input logic clk,
+	input logic reset,
+	input logic recv_val,
+	output logic recv_rdy,
+	output logic send_val,
+	input logic send_rdy,
+	input logic [n-1:0] ar,
+	input logic [n-1:0] ac,
+	input logic [n-1:0] br,
+	input logic [n-1:0] bc,
+	output logic [n-1:0] cr,
+	output logic [n-1:0] cc
+);
 	// performs c = a * b on complex a and b
-  input logic clk, reset;
-  input logic recv_val, send_rdy;
-	input logic [n-1:0] ar, ac, br, bc;
-  output logic send_val, recv_rdy;
-	output logic [n-1:0] cr, cc;
-
-	initial begin
-		recv_rdy = 1;
-	end
 
 	// cr = (ar * br) - (ac * bc)
 	// cc = (ar * bc) + (br * ac) = (ar + ac)(br + bc) - (ac * bc) - (ar * br)
@@ -66,13 +70,11 @@ module FpcmultVRTL
 	assign cc = ab - arbr - acbc;
 
 	always @(posedge clk) begin
-    if (reset) begin
-      recv_rdy <= 1;
-      send_val <= 0;
-      sab_rdy <= 0;
-    end
-
-		if (recv_val & recv_rdy) begin 
+		if (reset) begin
+		  recv_rdy <= 1;
+		  send_val <= 0;
+		  sab_rdy <= 0;
+		end else if (recv_val & recv_rdy) begin 
 			sab_rdy <= 1;
 			a <= ar + ac;
 			b <= br + bc;
@@ -82,20 +84,16 @@ module FpcmultVRTL
 			brt <= br;
 			recv_rdy <= 0;
 			send_val <= 0;
-		end
-
-		if (sab_rdy) begin
+		end else if (sab_rdy) begin
 			sab_rdy <= 0;
-		end
-
-		if (~sab_rdy & ~send_val & arbr_rdy & acbc_rdy & ab_rdy) begin // all multipliers are done!
+		end else if (~sab_rdy & ~send_val & arbr_rdy & acbc_rdy & ab_rdy) begin // all multipliers are done!
 			send_val <= 1;
-		end
-
-		if (~recv_rdy & send_val & send_rdy) begin
+		end else if (~recv_rdy & send_val & send_rdy) begin
 			recv_rdy <= 1;
 		end
 	end
+
+
 endmodule
 
 `endif

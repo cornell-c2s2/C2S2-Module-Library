@@ -6,7 +6,7 @@
 
 module DecoderVRTL
     #(  parameter m = 3, 
-        parameter n = 2 ** m
+        parameter n = 1'b1 << m
     )(
         input  logic         enable, 
         input  logic [m-1:0] x, 
