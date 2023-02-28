@@ -13,7 +13,7 @@
 module ArbitratorVRTL
 #(
   parameter nbits = 32,
-  parameter num_inputs = 6,
+  parameter num_inputs = 3,
   parameter addr_nbits = $clog2(num_inputs)
 )
 (
