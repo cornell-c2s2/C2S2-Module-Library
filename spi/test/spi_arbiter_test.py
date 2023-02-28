@@ -8,7 +8,7 @@ Unit test for Arbitrator.
 from pymtl3 import *
 from pymtl3.stdlib.test_utils import config_model_with_cmdline_opts
 
-from ..components.ArbitratorRTL import ArbitratorRTL
+from spi.spi_arbiter_rtl import ArbitratorRTL
 
 num_disassems = 0
 
