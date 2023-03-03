@@ -10,6 +10,13 @@ Author : Kyle Infantino
 
 */
 
+/*
+Note for C2S2 future development:
+We can add support for different frequencies. Currently, SPI Master
+runs at 1/2 of the system clock. However, we can add cycles to lower the
+frequency. We will need a modified FSM and input from chip so that we 
+can dynamically lower or raise the SPI frequency. Addi
+*/
 `ifndef SPI_V3_COMPONENTS_SPIMASTER_V
 `define SPI_V3_COMPONENTS_SPIMASTER_V
 
