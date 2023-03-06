@@ -88,7 +88,7 @@ module fpcmult_control
 	always @(*) begin
 		case (state)
 			IDLE: begin
-				if (recv_val) next_state = STALL;
+				if (recv_val) next_state = AABB;
 				else begin
 					next_state = IDLE;
 					post_idle = AABB;
@@ -96,7 +96,7 @@ module fpcmult_control
 			end
 			ARBR: begin
 				if (mul_send_val) begin
-					next_state = STALL;
+					next_state = ACBC;
 					post_idle = ACBC;
 				end else begin
 					next_state = ARBR;
@@ -108,7 +108,7 @@ module fpcmult_control
 			end
 			AABB: begin
 				if (mul_send_val) begin
-					next_state = STALL;
+					next_state = ARBR;
 					post_idle = ARBR;
 				end else next_state = AABB;
 			end
@@ -236,7 +236,7 @@ module fpcmult_datapath
 		.a(mul_a),
 		.b(mul_b),
 		.c(mul_c),
-		.recv_val(1),
+		.recv_val(mul_stage != 3),
 		.recv_rdy(mul_recv_rdy),
 		.send_val(mul_send_val),
 		.send_rdy(1)
