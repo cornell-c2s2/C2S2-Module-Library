@@ -1,6 +1,8 @@
 `ifndef FIXED_POINT_ITERATIVE_COMPLEX_MULTIPLIER
 `define FIXED_POINT_ITERATIVE_COMPLEX_MULTIPLIER
 `include "../../../lib/sim/fixedpt-iterative-multiplier/FpmultVRTL.v"
+`include "../../../lib/sim/nbitregister/RegisterV_Reset.v"
+`include "muxes.v"
 
 module FpcmultVRTL
 # (
@@ -25,75 +27,250 @@ module FpcmultVRTL
 	// cr = (ar * br) - (ac * bc)
 	// cc = (ar * bc) + (br * ac) = (ar + ac)(br + bc) - (ac * bc) - (ar * br)
 
-	logic [n-1:0] arbr, acbc, ab, a, b; // temporary values
-	logic arbr_rdy, acbc_rdy, ab_rdy, sab_rdy;
-	logic m1_recv_rdy, m2_recv_rdy, m3_recv_rdy;
-	reg [n-1:0] act, art, bct, brt;
+	logic mul_recv_rdy, mul_send_val, in_wait;
+	logic [1:0] mul_stage;
 
-	FpmultVRTL #(.n(n), .d(d), .sign(1)) m1 ( // ar * br
+	fpcmult_control #(n, d) control (
 		.clk(clk),
 		.reset(reset),
-		.a(art),
-		.b(brt),
-		.c(arbr),
-		.recv_val(sab_rdy),
-		.recv_rdy(m1_recv_rdy),
-		.send_val(arbr_rdy),
-		.send_rdy(1'b1)
+		.recv_val(recv_val),
+		.recv_rdy(recv_rdy),
+		.send_val(send_val),
+		.send_rdy(send_rdy),
+		.mul_recv_rdy(mul_recv_rdy),
+		.mul_send_val(mul_send_val),
+		.in_wait(in_wait),
+		.mul_stage(mul_stage)
 	);
 
-	FpmultVRTL #(.n(n), .d(d), .sign(1)) m2 ( // ac * bc
+	fpcmult_datapath #(n, d) datapath (
 		.clk(clk),
 		.reset(reset),
-		.a(act),
-		.b(bct),
-		.c(acbc),
-		.recv_val(sab_rdy),
-		.recv_rdy(m2_recv_rdy),
-		.send_val(acbc_rdy),
-		.send_rdy(1'b1)
+		.ar(ar),
+		.ac(ac),
+		.br(br),
+		.bc(bc),
+		.cr(cr),
+		.cc(cc),
+		.mul_recv_rdy(mul_recv_rdy),
+		.mul_send_val(mul_send_val),
+		.in_wait(in_wait),
+		.mul_stage(mul_stage)
 	);
+endmodule
 
-	FpmultVRTL #(.n(n), .d(d), .sign(1)) m3 ( // (ar + ac) * (br + bc)
-		.clk(clk),
-		.reset(reset),
-		.a(a),
-		.b(b),
-		.c(ab),
-		.recv_val(sab_rdy),
-		.recv_rdy(m3_recv_rdy),
-		.send_val(ab_rdy),
-		.send_rdy(1'b1)
-	);
+module fpcmult_control
+# (
+	parameter n, parameter d
+) (
+	input logic clk,
+	input logic reset,
+	input logic recv_val,
+	output logic recv_rdy,
+	output logic send_val,
+	input logic send_rdy,
+	input logic mul_recv_rdy,
+	input logic mul_send_val,
+	output logic [1:0] mul_stage,
+	output logic in_wait
+);
 
-	assign cr = arbr - acbc;
-	assign cc = ab - arbr - acbc;
+	localparam [2:0]
+		IDLE = 3'd0,
+		DONE = 3'd1,
+		ARBR = 3'd2,
+		ACBC = 3'd3,
+		AABB = 3'd4,
+		STALL = 3'd5;
+
+	logic [2:0] state, next_state, post_idle;
+	
+	always @(*) begin
+		case (state)
+			IDLE: begin
+				if (recv_val) next_state = STALL;
+				else begin
+					next_state = IDLE;
+					post_idle = AABB;
+				end
+			end
+			ARBR: begin
+				if (mul_send_val) begin
+					next_state = STALL;
+					post_idle = ACBC;
+				end else begin
+					next_state = ARBR;
+				end
+			end
+			ACBC: begin
+				if (mul_send_val) next_state = DONE;
+				else next_state = ACBC;
+			end
+			AABB: begin
+				if (mul_send_val) begin
+					next_state = STALL;
+					post_idle = ARBR;
+				end else next_state = AABB;
+			end
+			DONE: begin
+				if (send_rdy) next_state = IDLE;
+				else next_state = DONE;
+			end
+			STALL: begin
+				if (mul_recv_rdy) next_state = post_idle;
+				else next_state = STALL;
+			end
+			default: begin
+				next_state = IDLE;
+			end
+		endcase
+	end
+
+	always @(*) begin
+		case (state)
+			IDLE: begin
+				in_wait = 1; mul_stage = 3;
+				recv_rdy = 1; send_val = 0;
+			end
+			AABB: begin
+				in_wait = 0; mul_stage = 0;
+				recv_rdy = 0; send_val = 0;
+			end
+			ARBR: begin
+				in_wait = 0; mul_stage = 1;
+				recv_rdy = 0; send_val = 0;
+			end
+			ACBC: begin
+				in_wait = 0; mul_stage = 2;
+				recv_rdy = 0; send_val = 0;
+			end
+			DONE: begin
+				in_wait = 0; mul_stage = 3;
+				recv_rdy = 0; send_val = 1;
+			end
+			default: begin
+				in_wait = 0; mul_stage = 3;
+				recv_rdy = 0; send_val = 0;
+			end
+		endcase
+	end
 
 	always @(posedge clk) begin
 		if (reset) begin
-		  recv_rdy <= 1;
-		  send_val <= 0;
-		  sab_rdy <= 0;
-		end else if (recv_val & recv_rdy) begin 
-			sab_rdy <= 1;
-			a <= ar + ac;
-			b <= br + bc;
-			act <= ac;
-			art <= ar;
-			bct <= bc;
-			brt <= br;
-			recv_rdy <= 0;
-			send_val <= 0;
-		end else if (sab_rdy) begin
-			sab_rdy <= 0;
-		end else if (~sab_rdy & ~send_val & arbr_rdy & acbc_rdy & ab_rdy) begin // all multipliers are done!
-			send_val <= 1;
-		end else if (~recv_rdy & send_val & send_rdy) begin
-			recv_rdy <= 1;
+			state <= IDLE;
+		end else begin
+			state <= next_state;
 		end
 	end
-
-
 endmodule
 
+
+module fpcmult_datapath
+# (
+	parameter n, parameter d
+) (
+	input logic clk,
+	input logic reset,
+	input logic [n-1:0] ar,
+	input logic [n-1:0] ac,
+	input logic [n-1:0] br,
+	input logic [n-1:0] bc,
+	output logic [n-1:0] cr,
+	output logic [n-1:0] cc,
+	input logic in_wait,
+	input logic[1:0] mul_stage,
+	output logic mul_recv_rdy,
+	output logic mul_send_val
+);
+
+	logic [n-1:0] c_ar, c_ac, c_br, c_bc, c_arac;
+	logic [n-1:0] i_ar, i_ac, i_arac;
+	logic [n-1:0] mul_a, mul_b, mul_c;
+
+	assign cr = c_ar - c_ac;
+	assign cc = c_arac - c_ar - c_ac;
+
+	RegisterV_Reset #(n) reg_c_ar (
+		.clk(clk),
+		.reset(reset),
+		.w(in_wait || mul_stage == 1),
+		.d(i_ar),
+		.q(c_ar)
+	);
+
+	RegisterV_Reset #(n) reg_c_br (
+		.clk(clk),
+		.reset(reset),
+		.w(in_wait),
+		.d(br),
+		.q(c_br)
+	);
+
+	RegisterV_Reset #(n) reg_c_ac (
+		.clk(clk),
+		.reset(reset),
+		.w(in_wait || mul_stage == 2),
+		.d(i_ac),
+		.q(c_ac)
+	);
+
+	RegisterV_Reset #(n) reg_c_bc (
+		.clk(clk),
+		.reset(reset),
+		.w(in_wait),
+		.d(bc),
+		.q(c_bc)
+	);
+
+	RegisterV_Reset #(n) reg_c_arac (
+		.clk(clk),
+		.reset(reset),
+		.w(mul_stage == 0),
+		.d(mul_c),
+		.q(c_arac)
+	);
+
+	FpmultVRTL #(n, d, 1) multiplier (
+		.clk(clk),
+		.reset(reset),
+		.a(mul_a),
+		.b(mul_b),
+		.c(mul_c),
+		.recv_val(1),
+		.recv_rdy(mul_recv_rdy),
+		.send_val(mul_send_val),
+		.send_rdy(1)
+	);
+
+	// Used to select between storing arbr multiplication output and input
+	vc_Mux2 #(n) iomul_ar_sel (
+		.in0(ar),
+		.in1(mul_c),
+		.sel(~in_wait),
+		.out(i_ar)
+	);
+
+	vc_Mux2 #(n) iomul_ac_sel (
+		.in0(ac),
+		.in1(mul_c),
+		.sel(~in_wait),
+		.out(i_ac)
+	);
+
+	vc_Mux3 #(n) mul_a_sel (
+		.in0(c_ar + c_ac),
+		.in1(c_ar),
+		.in2(c_ac),
+		.sel(mul_stage),
+		.out(mul_a)
+	);
+
+	vc_Mux3 #(n) mul_b_sel (
+		.in0(c_br + c_bc),
+		.in1(c_br),
+		.in2(c_bc),
+		.sel(mul_stage),
+		.out(mul_b)
+	);
+endmodule
 `endif
