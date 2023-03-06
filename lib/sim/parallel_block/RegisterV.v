@@ -15,7 +15,7 @@ module RegisterV
 	assign q = regout;
 
 	always @(posedge clk) begin
-		if (w)
+		if (w == 1)
 			regout <= d;
 	end
 endmodule
