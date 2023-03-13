@@ -41,6 +41,7 @@ class SPIMasterValRdyVRTL( VerilogPlaceholder, Component ):
 
     s.packet_size_ifc = RecvIfcRTL( s.logBitsN ) # size of spi packet (up to nbits)
     s.cs_addr_ifc = RecvIfcRTL( mk_bits(clog2(s.ncs) if s.ncs > 1 else 1) )
+    s.freq_ifc = RecvIfcRTL ( mk_bits( 1 ) )
 
 # For to force testing a specific RTL language
 import sys
