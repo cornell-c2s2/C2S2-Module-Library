@@ -37,7 +37,7 @@ def t( dut, cs_addr, packet_size, recv, send, cs, sclk, mosi, miso, freq):
   assert dut.packet_size_ifc.rdy == packet_size[1]
   assert dut.recv.rdy == recv[1]
   assert dut.send.val == send[0]
-  assert dut.freq.rdy == freq[1]
+  assert dut.freq_ifc.rdy == freq[1]
 
   if send[2] != '?':
     assert dut.send.msg == send[2]
@@ -549,24 +549,61 @@ def test_basic_freq (cmdline_opts ): # basic test
       # INIT
   t(  dut, [1,1,0],  [0,1,0x0],  [0,1,0x0],  [0,1,'?'],   [1],    0,  '?',    0, [0,1,0x0] ) # use cs0
   t(  dut, [0,1,0],  [1,1,0x4],  [0,1,0x0],  [0,1,'?'],   [1],    0,  '?',    0, [0,1,0x0] ) # pkt size = 4
-  t(  dut, [0,1,0],  [0,1,0x0],  [1,1,0x0],  [0,1,'?'],   [1],    0,  '?',    0, [0,1,0x7] ) # freq 1/256
+  t(  dut, [0,1,0],  [0,1,0x0],  [0,1,0x0],  [0,1,'?'],   [1],    0,  '?',    0, [1,1,0x7] ) # freq 1/256
   t(  dut, [0,1,0],  [0,1,0x0],  [1,1,0xA],  [0,1,'?'],   [1],    0,  '?',    0, [0,1,0x0] ) # Send out 0xA MOSI
       # START0
   t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,1,'?'],   [0],    0,    1,    0, [0,0,0x0] ) 
       # START1
   t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    0,    1,    0, [0,0,0x0] )
-      # SCLK_HIGH,       # SCLK_LOW
+  
+  # SCLK_HIGH,       # SCLK_LOW
   t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    1,    1,    0, [0,0,0x0] ) # MOSI sampled on Minion, we sample MISO
+  #enter the high_wait for 255 times
+  #for x in range(1):
+  #  t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    1,    1,    0, [0,0,0x0] )
+
   t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    0,    0,    1, [0,0,0x0] ) # Change MOSI, Minion changes MISO
-      # SCLK_HIGH,        # SCLK_LOW
-  t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    1,    0,    1, [0,0,0x0] )
-  t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    0,    1,    0, [0,0,0x0] )
-      # SCLK_HIGH,        # SCLK_LOW
-  t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    1,    1,    0, [0,0,0x0] )
-  t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    0,    0,    1, [0,0,0x0] )
-      # SCLK_HIGH,        # SCLK_LOW
-  t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    1,    0,    1, [0,0,0x0] )
-  t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    0,   '?',   0, [0,0,0x0] )
+  #enter the low_wait for 255 times
+  for x in range(127):
+    t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    0,    0,    1, [0,0,0x0] )
+  
+
+  
+  # SCLK_HIGH,       # SCLK_LOW
+  t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    1,    1,    0, [0,0,0x0] ) # MOSI sampled on Minion, we sample MISO
+  #enter the high_wait for 255 times
+  for x in range(127):
+    t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    1,    1,    0, [0,0,0x0] )
+  
+  t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    0,    0,    1, [0,0,0x0] ) # Change MOSI, Minion changes MISO
+  #enter the low_wait for 255 times
+  for x in range(127):
+    t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    0,    0,    1, [0,0,0x0] )
+  
+
+  # SCLK_HIGH,       # SCLK_LOW
+  t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    1,    1,    0, [0,0,0x0] ) # MOSI sampled on Minion, we sample MISO
+  #enter the high_wait for 255 times
+  for x in range(127):
+    t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    1,    1,    0, [0,0,0x0] )
+  
+  t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    0,    0,    1, [0,0,0x0] ) # Change MOSI, Minion changes MISO
+  #enter the low_wait for 255 times
+  for x in range(127):
+    t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    0,    0,    1, [0,0,0x0] )
+  
+
+  # SCLK_HIGH,       # SCLK_LOW
+  t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    1,    1,    0, [0,0,0x0] ) # MOSI sampled on Minion, we sample MISO
+  #enter the high_wait for 255 times
+  for x in range(127):
+    t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    1,    1,    0, [0,0,0x0] )
+  
+  t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    0,    0,    1, [0,0,0x0] ) # Change MOSI, Minion changes MISO
+  #enter the low_wait for 255 times
+  for x in range(127):
+    t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    0,    0,    1, [0,0,0x0] )
+  
       # CS_LOW_WAIT
   t(  dut, [0,0,0],  [0,0,0x0],  [0,0,0x0],  [0,0,'?'],   [0],    0,   '?',   0, [0,0,0x0] )
       # DONE
