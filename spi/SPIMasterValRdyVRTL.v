@@ -41,6 +41,30 @@ after countdown complete. Will refill value after the
 
 -Austin
 */
+
+/*
+Notes 3/20/2023
+I failed to account for the fact that the divisor of the frequency
+should be squared. What was happening was that the counter for the 
+hold states will only run for the number stored in freq. Therefore, 
+256 cycles actually turns out to be 7.
+
+There was also an issue with the shift registers. Our design with
+the hold states affected the posedge and negedge of the clock.
+However, this would cause the registers to shift data during our
+hold states. The hold states no longer have an impact on posedge
+or negedge.
+
+Negedge and posedge may need own states.
+
+In the next version of SPI Master, we can include support for SPI
+modes 1-3. This will require that we add additional states for each
+mode. This will also require that the sclk_posedge and sclk_negedge
+are changed to be more general controls such as shift_in_enable
+and shift_out_enable.
+-Austin
+*/
+
 `ifndef SPI_V3_COMPONENTS_SPIMASTER_V
 `define SPI_V3_COMPONENTS_SPIMASTER_V
 
@@ -206,17 +230,20 @@ module SPIMasterValRdyVRTL
     end else if (state == STATE_SCLK_LOW) begin
       sclk_posedge                = (sclk_counter != 0);
       spi_ifc_cs[cs_addr_reg_out] = 0;
+      spi_ifc_sclk                = 0;
       freq_counter_en             = 0;
       freq_refill                 = 1;
     end else if (state == STATE_SCLK_HIGH_HOLD) begin
       spi_ifc_cs[cs_addr_reg_out] = 0;
       spi_ifc_sclk                = 1;
-      sclk_negedge                 = 1;
+      //sclk_negedge                 = 1;
+      sclk_counter_en              = 0;
       freq_counter_en              = 1;
       freq_refill                  = 0;
     end else if (state == STATE_SCLK_LOW_HOLD) begin
-      sclk_posedge                = (sclk_counter != 0);
+      //sclk_posedge                = (sclk_counter != 0);
       spi_ifc_cs[cs_addr_reg_out] = 0;
+      spi_ifc_sclk                = 0;
       freq_counter_en             = 1;
       freq_refill                 = 0;
     end else if (state == STATE_CS_LOW_WAIT) begin
@@ -240,7 +267,9 @@ module SPIMasterValRdyVRTL
   //freq counter logic
   always_ff @( posedge clk ) begin
     if (reset) freq_counter <= 0;
-    else if ((recv_val & recv_rdy) | freq_refill) freq_counter <= freq_reg_out;
+    else if ((recv_val & recv_rdy) | freq_refill) begin
+      freq_counter <= 2**freq_reg_out-1;
+    end
     else if (freq_counter_en) freq_counter <= freq_counter - 1;
   end
 
