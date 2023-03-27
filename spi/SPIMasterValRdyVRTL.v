@@ -65,6 +65,19 @@ and shift_out_enable.
 -Austin
 */
 
+/*
+Notes 3/20/2023
+This week, I have made some bug adjustments. First I fixed the new 
+state machine to accurately depict when positive and negative clock
+edges are on.
+
+Currently, there is an issue with the number of hold cycles being
+run. When running the desired number of cycles, we get an erroneous
+number. Right now, if 7 was written then 8 hold cycles run instead
+of 127.
+-Austin
+*/
+
 `ifndef SPI_V3_COMPONENTS_SPIMASTER_V
 `define SPI_V3_COMPONENTS_SPIMASTER_V
 
@@ -114,13 +127,16 @@ module SPIMasterValRdyVRTL
   logic                cs_addr_reg_en;
   logic [logBitsN-1:0] sclk_counter;
   logic                sclk_counter_en;
-  logic [2:0]          freq_counter; //new
-  logic                freq_counter_en; //new
+  logic [6:0]          freq_high_counter; //new
+  logic                freq_high_counter_en; //new
+  logic [6:0]          freq_low_counter; //new
+  logic                freq_low_counter_en; //new
   logic [2:0]          freq_reg_out; //new
   logic                freq_reg_en; //new
   logic [nbits-1:0]    shreg_in_out;
   logic [nbits-1:0]    shreg_out_out;
-  logic                freq_refill;
+  logic                freq_high_refill;
+  logic                freq_low_refill;
 
   vc_EnResetReg #(logBitsN) packet_size_reg (
     .clk(clk),   
@@ -173,16 +189,16 @@ module SPIMasterValRdyVRTL
       STATE_START0 : next_state = STATE_START1;
       STATE_START1 : next_state = STATE_SCLK_HIGH;
       STATE_SCLK_HIGH : 
-        if (freq_counter == 0) next_state = STATE_SCLK_LOW;
+        if (freq_high_counter == 0) next_state = STATE_SCLK_LOW;
         else next_state = STATE_SCLK_HIGH_HOLD;
       STATE_SCLK_LOW : 
-        if (freq_counter == 0) next_state = (sclk_counter == 0) ? STATE_CS_LOW_WAIT : STATE_SCLK_HIGH;
+        if (freq_low_counter == 0) next_state = (sclk_counter == 0) ? STATE_CS_LOW_WAIT : STATE_SCLK_HIGH;
         else next_state = STATE_SCLK_LOW_HOLD;
       STATE_SCLK_HIGH_HOLD : //new
-        if (freq_counter == 0) next_state = STATE_SCLK_LOW;
+        if (freq_high_counter == 0) next_state = STATE_SCLK_LOW;
         else next_state = STATE_SCLK_HIGH_HOLD;
       STATE_SCLK_LOW_HOLD : //new
-        if (freq_counter == 0) next_state = (sclk_counter == 0) ? STATE_CS_LOW_WAIT : STATE_SCLK_HIGH;
+        if (freq_low_counter == 0) next_state = (sclk_counter == 0) ? STATE_CS_LOW_WAIT : STATE_SCLK_HIGH;
         else next_state = STATE_SCLK_LOW_HOLD;
       STATE_CS_LOW_WAIT : next_state = STATE_DONE;
       STATE_DONE : begin
@@ -208,6 +224,11 @@ module SPIMasterValRdyVRTL
     sclk_posedge = 0;
     sclk_counter_en = 0;
     shreg_out_rst = 0;
+    freq_high_refill = 0;
+    freq_low_refill = 0;
+    freq_high_counter_en = 0;
+    freq_low_counter_en = 0;
+
 
     if (state == STATE_INIT) begin
       recv_rdy           = 1;
@@ -223,29 +244,27 @@ module SPIMasterValRdyVRTL
     end else if (state == STATE_SCLK_HIGH) begin
       spi_ifc_cs[cs_addr_reg_out] = 0;
       spi_ifc_sclk                = 1;
-      sclk_negedge                 = 1;
+      sclk_negedge                 = (freq_high_counter == 0);
       sclk_counter_en              = 1;
-      freq_counter_en              = 0;
-      freq_refill                  = 1;
+      freq_high_counter_en         = 1;
+      freq_low_refill              = 1;
     end else if (state == STATE_SCLK_LOW) begin
-      sclk_posedge                = (sclk_counter != 0);
+      sclk_posedge                = ((sclk_counter != 0) && (freq_low_counter == 0));
       spi_ifc_cs[cs_addr_reg_out] = 0;
       spi_ifc_sclk                = 0;
-      freq_counter_en             = 0;
-      freq_refill                 = 1;
+      freq_low_counter_en         = 1;
+      freq_high_refill             = 1;
     end else if (state == STATE_SCLK_HIGH_HOLD) begin
       spi_ifc_cs[cs_addr_reg_out] = 0;
       spi_ifc_sclk                = 1;
-      //sclk_negedge                 = 1;
+      sclk_negedge                 = (freq_high_counter == 0);
       sclk_counter_en              = 0;
-      freq_counter_en              = 1;
-      freq_refill                  = 0;
+      freq_high_counter_en         = 1;
     end else if (state == STATE_SCLK_LOW_HOLD) begin
-      //sclk_posedge                = (sclk_counter != 0);
+      sclk_posedge                = ((sclk_counter != 0) && (freq_low_counter == 0));
       spi_ifc_cs[cs_addr_reg_out] = 0;
       spi_ifc_sclk                = 0;
-      freq_counter_en             = 1;
-      freq_refill                 = 0;
+      freq_low_counter_en         = 1;
     end else if (state == STATE_CS_LOW_WAIT) begin
       spi_ifc_cs[cs_addr_reg_out] = 0;
     end else if (state == STATE_DONE) begin
@@ -264,13 +283,22 @@ module SPIMasterValRdyVRTL
     else if (sclk_counter_en) sclk_counter <= sclk_counter - 1;
   end
 
-  //freq counter logic
+  //freq positive counter logic
   always_ff @( posedge clk ) begin
-    if (reset) freq_counter <= 0;
-    else if ((recv_val & recv_rdy) | freq_refill) begin
-      freq_counter <= 2**freq_reg_out-1;
+    if (reset) freq_high_counter <= 0;
+    else if ((recv_val & recv_rdy) | freq_high_refill) begin
+      freq_high_counter <= 2**freq_reg_out-1;
     end
-    else if (freq_counter_en) freq_counter <= freq_counter - 1;
+    else if (freq_high_counter_en) freq_high_counter <= freq_high_counter - 1;
+  end
+
+  //freq negative counter logic
+  always_ff @( posedge clk ) begin
+    if (reset) freq_low_counter <= 0;
+    else if ((recv_val & recv_rdy) | freq_low_refill) begin
+      freq_low_counter <= 2**freq_reg_out-1;
+    end
+    else if (freq_low_counter_en) freq_low_counter <= freq_low_counter - 1;
   end
 
   //Datapath
