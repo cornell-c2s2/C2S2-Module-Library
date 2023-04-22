@@ -1,0 +1,95 @@
+$date
+	Sat Apr 22 14:19:39 2023
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module top $end
+$var wire 13 ! send_msg [12:0] $end
+$var parameter 32 " addr_size $end
+$var parameter 32 # payload_size $end
+$var reg 1 $ clk $end
+$var reg 13 % rec_msg [12:0] $end
+$var reg 1 & reset $end
+$scope module config_reg $end
+$var wire 1 $ clk $end
+$var wire 13 ' rec_msg [12:0] $end
+$var wire 1 & reset $end
+$var parameter 32 ( addr_size $end
+$var parameter 32 ) payload_size $end
+$var parameter 4 * set_config_address $end
+$var reg 4 + addr [3:0] $end
+$var reg 4 , config_addr [3:0] $end
+$var reg 8 - payload [7:0] $end
+$var reg 13 . send_msg [12:0] $end
+$var reg 1 / success $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+b0 *
+b1000 )
+b100 (
+b1000 #
+b100 "
+$end
+#0
+$dumpvars
+1/
+bx .
+b11111111 -
+b0 ,
+b0 +
+b111111111 '
+1&
+b111111111 %
+1$
+bx !
+$end
+#5
+0$
+#10
+b0 !
+b0 .
+1$
+#11
+b1010101 -
+b101010101 %
+b101010101 '
+0&
+#15
+0$
+#20
+b101010101 !
+b101010101 .
+1$
+#21
+b0 -
+0/
+b1010101 %
+b1010101 '
+#25
+0$
+#30
+b0 !
+b0 .
+1$
+#31
+b101101010101 %
+b101101010101 '
+#35
+0$
+#40
+1$
+#41
+b101001010101 %
+b101001010101 '
+#45
+0$
+#50
+1$
+#51
