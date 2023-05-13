@@ -228,6 +228,7 @@ module SPIMasterValRdyVRTL
     freq_low_refill = 0;
     freq_high_counter_en = 0;
     freq_low_counter_en = 0;
+    freq_reg_en = 0;
 
 
     if (state == STATE_INIT) begin
