@@ -9,7 +9,7 @@ Author : Austin Brown
 
 */
 
-module counter 
+module ClockCounter 
 #(
     nbits = 32
 )
