@@ -1,8 +1,8 @@
 module synchronizer (
   input logic clk,
   input logic reset,
-  input logic in,
-  output logic out
+  input logic inp,
+  output logic outp
 );
 
 // shift reg
@@ -13,9 +13,9 @@ module synchronizer (
     if (reset) begin 
       value <= 3'd0;
     end else begin 
-      value <= {value[2:0], in};
+      value <= {value[2:0], inp};
     end
   end
 
-  assign out = value[1];
+  assign outp = value[1];
 endmodule
